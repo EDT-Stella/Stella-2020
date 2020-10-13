@@ -1,21 +1,64 @@
+
 bool RotateAuger = false;
 bool ColorSense = false;
-bool RotateBarrel = false;
+bool RotareBarrel = false;
 
-enum colorList {
+enum colorList{ 
+  Red, 
   Orange,
-  Red,
   Yellow,
   Green,
-  Light_Blue,
-  Dark_Blue,
+  LightBlue,
+  DarkBlue,
   Purple,
   Pink
-} storeColor, dropColor;
+  
+}storeColor, dropColor;
+
+ void setSortColor(){
+    if(storeColor == Red) {
+
+      dropColor = Purple;
+      
+    }
+    else if (storeColor == Orange){
+
+      dropColor = Yellow;
+      
+    }
+    else if (storeColor == Yellow){
+
+      dropColor = Orange;
+  
+      
+    }
+    else if (storeColor == Green){
+
+        dropColor = LightBlue;
+    }
+    else if (storeColor == LightBlue){
+
+      dropColor = Green;
+    }
+    else if (storeColor == Purple) 
+    {
+
+      dropColor = Red;
+    }
+ }
+
 
 void setup() {
-  storeColor = Red;
+  storeColor = Red ;
   dropColor = Purple;
+
+ 
+
+  
+
+    
+  
+
   
 }
 
