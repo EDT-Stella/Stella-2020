@@ -35,9 +35,9 @@ void setSortColor(){
   {
     dropColor = Red;
   }
- }
+}
 
- bool rotateAugerUp() {
+bool rotateAugerUp() {
   if (!ColorSense) {
     if (!RotateBarrel) {
       //Rotate Auger
