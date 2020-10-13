@@ -1,6 +1,22 @@
-void setup() {
-  // put your setup code here, to run once:
+bool RotateAuger = false;
+bool ColorSense = false;
+bool RotateBarrel = false;
 
+enum colorList {
+  Orange,
+  Red,
+  Yellow,
+  Green,
+  Light_Blue,
+  Dark_Blue,
+  Purple,
+  Pink
+} storeColor, dropColor;
+
+void setup() {
+  storeColor = Red;
+  dropColor = Purple;
+  
 }
 
 void loop() {
