@@ -2,7 +2,7 @@
 enum penStates {
   Retracted,
   Extended
-} pen;
+} pen = Retracted;
 
 void clickPress() {
   if (pen == Retracted) {
@@ -14,7 +14,7 @@ void clickPress() {
 }
 
 void setup() {
-  attachInterrupt(digitalPinToInterrupt(2), clickPress, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(2), clickPress, HIGH);
 
 }
 
