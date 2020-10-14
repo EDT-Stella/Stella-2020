@@ -11,52 +11,54 @@
 #include "Adafruit_TCS34725.h"
 #include <Tic.h>
 
-//==================Pin Definitions==============
+//===============Pin Definitions=================
 #define CE_PIN   9
 #define CSN_PIN 10
 #define address2 0x80 // Address to Roboclaw
 //===============================================
 
-//=================Radio Globals=================
+//===============Radio Globals===================
 const byte thisSlaveAddress[5] = {'R','x','A','A','A'};
 RF24 radio(CE_PIN, CSN_PIN);
 //===============================================
 
-//=================RoboClaw Globals==============
+//===============RoboClaw Globals================
 RoboClaw roboclaw(&Serial3, 10000); // Create a Roboclaw object
 bool actuatorForward = true;
 bool motorForward = true;
 //===============================================
 
-//=================ColorSensor Globals==============
+//===============Stepper Motor Globals===========
 #ifdef SERIAL_PORT_HARDWARE_OPEN
 #define ticSerial SERIAL_PORT_HARDWARE_OPEN
 #else
 #include <SoftwareSerial.h>
 SoftwareSerial ticSerial(10, 11);
 #endif
+TicSerial tic(ticSerial);
+//===============================================
+
+//===============Color Sensor Globals============
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
+//===============================================
 
 // Each color compartment corresponds to a numerical ID from 1 to 6, with the index increasing as you go clockwise
 // and looping back to 1 when you go clockwise from 6
 short currentColor = 1; // The current index the motor is at
 short targetColor = 1; // The target index for the motor to move to
 
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
-TicSerial tic(ticSerial);
-//===============================================
-
-struct dataReceived {
-    byte jX;
-    byte jY;
-    char pass[7];
-    bool button1, button2, button3, button4, rocker, jsButton;
-    byte ballColor;  
+struct dataReceived { // Data from the controller
+  byte jX;
+  byte jY;
+  char pass[7];
+  bool button1, button2, button3, button4, rocker, jsButton;
+  byte ballColor;  
 };
 dataReceived data; // this must match dataToSend in the TX
 
 struct ackData { //Acknowledgement data
-    byte ballColor;
-    bool ballDispensed;
+  byte ballColor;
+  bool ballDispensed;
 };
 ackData aData; //Acknowledgement data to be returned to controller
 
@@ -77,73 +79,77 @@ void dataReceived_Interrupt() {
 //==================================================================
 //==========================setup()=================================
 void setup() {
-    Serial.begin(9600);
-    Serial.println("Stella Receiver Starting -- Edit");
+  Serial.begin(9600);
+  Serial.println("Stella Receiver Starting");
 
-    //-----------------------------------------
-    //Radio initialization and settings
-    radio.begin();
-    radio.setDataRate( RF24_250KBPS );
-    radio.openReadingPipe(1, thisSlaveAddress);
-    radio.enableAckPayload();
-    radio.startListening();
-    radio.writeAckPayload(1, &aData, sizeof(ackData)); // pre-load data
-    attachInterrupt(digitalPinToInterrupt(2), dataReceived_Interrupt, FALLING);
-    Serial.println("Radio is starting");
-    //-----------------------------------------
+  //-----------------------------------------
+  //Radio initialization and settings
+  radio.begin();
+  radio.setDataRate( RF24_250KBPS );
+  radio.openReadingPipe(1, thisSlaveAddress);
+  radio.enableAckPayload();
+  radio.startListening();
+  radio.writeAckPayload(1, &aData, sizeof(ackData)); // pre-load data
+  attachInterrupt(digitalPinToInterrupt(2), dataReceived_Interrupt, FALLING);
+  Serial.println("Radio is starting");
+  //-----------------------------------------
 
-    //-----------------------------------------
-    //RoboClaw initialization and settings
-    Serial3.begin(57600); // Wire communication with Roboclaw
-    //-----------------------------------------
+  //-----------------------------------------
+  //RoboClaw initialization and settings
+  Serial3.begin(57600); // Wire communication with Roboclaw
+  //-----------------------------------------
 
-    //-----------------------------------------
-    //Color Sensor initialization and settings
-    ticSerial.begin(9600);
-    // Read the current color index from address 0 of the EEPROM
-    currentColor = EEPROM.read(0);
-    targetColor = currentColor; // Makes sure the stepper motor doesn't move to a target
+  //-----------------------------------------
+  //Stepper motor initialization and settings
+  ticSerial.begin(9600);
+  // Read the current color index from address 0 of the EEPROM
+  currentColor = EEPROM.read(0);
+  targetColor = currentColor; // Makes sure the stepper motor doesn't move to a target
 
-    delay(20); // Give time for stepper motor to start
+  delay(20); // Give time for stepper motor to start
 
-    // Set up stepper motor
-    tic.haltAndSetPosition(0);
-    tic.exitSafeStart();
+  // Set up stepper motor
+  tic.haltAndSetPosition(0);
+  tic.exitSafeStart();
+  //-----------------------------------------
 
-    // Ensures that the color sensor is connected
-    // Seemingly necessary for some reason (will not run properly without this)
-    if (tcs.begin()) {
-      Serial.println("Found sensor");
-    } else {
-      Serial.println("No TCS34725 found ... check your connections");
-      while (1); // halt!
-    }
-    //-----------------------------------------
+  //-----------------------------------------
+  //Color Sensor initialization and settings
+  // Ensures that the color sensor is connected
+  if (tcs.begin()) { // begin() starts the color sensor
+    Serial.println("Found sensor");
+  } else {
+    Serial.println("No TCS34725 found ... check your connections");
+    while (1); // halt!
+  }
+  //-----------------------------------------
 }
 //==================================================================
-//===========================mapInput()=================================
+//===========================mapInput()=============================
+// Maps joystick data to values recognized by the RoboClaw
+// forwardVar distinguishes between forward and backward functions
+// Both parameters are modified by the function
 void mapInput(byte& joystickData, bool& forwardVar) {
-  // Joystick Value|Sent to Motor
-  // 0               127
-  //                 67
-  // 128             0
-  //                 67
-  // 255             127
+  // Joystick Value   Value Sent to Motor
+  // 0 (Up input)     127 (forwardVar = true)
+  //                  67
+  // 127              0
+  //                  67
+  // 255 (Down input) 127 (forwardVar = false)
   
   // joystickData's 7th bit is 1 if > 127 and 0 otherwise
   forwardVar = !(joystickData >> 7);
 
-  
-  if(joystickData > 205) {
+  if (joystickData > 205) {
     joystickData = 127;
   }
-  else if(joystickData > 154) {
+  else if (joystickData > 154) {
     joystickData = 67;
   }
-  else if(joystickData > 103) {
+  else if (joystickData > 103) {
     joystickData = 0;
   }
-  else if(joystickData > 51) {
+  else if (joystickData > 51) {
     joystickData = 67;
   }
   else {
@@ -154,18 +160,18 @@ void mapInput(byte& joystickData, bool& forwardVar) {
 //===========================sendMotorControl()=====================
 void sendMotorControl() {
   // Motor commands to roboclaw
-  // Values for DutyM1, Duty M2, signed int 16 byte from -32767 to 32767 or (unsigned int)65536
-  // -32767 is full speed "backwards"  and 32767 is full speed "forward"
-  // WE ARE ADOPTING THE 2'S COMPLIMENT OF THIS FUNCTION SO ONLY USE -32767 TO 32767
+  // Values for DutyM1, Duty M2, signed 16 bit int from -32768 to 32767 or (unsigned int)65536
+  // -32768 is full speed "backwards"  and 32767 is full speed "forward"
+  // WE ARE ADOPTING THE 2'S COMPLEMENT OF THIS FUNCTION SO ONLY USE -32768 TO 32767
   delay(20);
-  if(actuatorForward) {
+  if (actuatorForward) {
     roboclaw.ForwardM1(address2, data.jY);
   }
   else {
     roboclaw.BackwardM1(address2, data.jY);
   }  
   delay(20);
-  if(motorForward) {
+  if (motorForward) {
     roboclaw.ForwardM2(address2, data.jX);
   }
   else {
@@ -176,7 +182,7 @@ void sendMotorControl() {
 //==================================================================
 //===========================loop()=================================
 void loop() {
-  //---------Loop must start with this function calls--------------
+  //-------------Loop must start with this function call------------
   if (mssg) {
     getData();
     mssg = false;
@@ -184,7 +190,7 @@ void loop() {
   
   //Comment out showData() for final code
   //showData();
-  //-----------------add code below here---------------------------
+  //------------------add code below here---------------------------
 
   //joysticks();  // call joystick assignments from analog pins
   mapInput(data.jX, actuatorForward); // Gets values that can be sent to motors
@@ -219,11 +225,10 @@ void loop() {
     mssg = false;
   }
 
-  // Prints RGB values
-  // Serial.print("R:\t"); Serial.print(int(red)); 
-  // Serial.print("\tG:\t"); Serial.print(int(green)); 
-  // Serial.print("\tB:\t"); Serial.print(int(blue));
-  // Serial.print("\n");
+  // Prints RGB values (debug)
+  //Serial.print("R:\t"); Serial.print(int(red)); 
+  //Serial.print("\tG:\t"); Serial.print(int(green)); 
+  //Serial.print("\tB:\t"); Serial.println(int(blue));
 
   findBallColor(red, green, blue);
   
@@ -237,10 +242,10 @@ void loop() {
   short distance = targetColor - currentColor;
 
   // Moves the opposite direction if the distance is greater than 3
-  if(distance > 3) {
+  if (distance > 3) {
     distance -= 6;
   }
-  else if(distance < -3) {
+  else if (distance < -3) {
     distance += 6;
   }
 
@@ -254,28 +259,26 @@ void loop() {
   currentColor = targetColor;
   // Write the current color index to address 0 of the EEPROM
   // update function only writes if the value differs from what is stored at the address
-  EEPROM.update(0, currentColor); 
-    
-  //delayWhileResettingCommandTimeout(1000); 
+  // *****Commented out because EEPROM writes are limited*****
+  //EEPROM.update(0, currentColor); 
+  
+  //delayWhileResettingCommandTimeout(1000);
 }
 //==================================================================
 //========================getData()=================================
 void getData() {
-  //Serial.print("Attempting Read\n");
-    if ( radio.available() ) {
-        radio.read( &data, sizeof(data) );
-        updateReplyData();
-        showData();
-        newData = true;
-        Serial.print("Data Received\n");
-    }
+  //Serial.println("Attempting Read");
+  if (radio.available()) {
+    radio.read(&data, sizeof(data));
+    updateReplyData();
+    showData();
+    newData = true;
+    Serial.println("Data Received");
+  }
 }
 //==================================================================
 //========================showData()================================
-//Called each loop to update the reply data, takes no parameters.
-//Status: Currently has no outside connections to read from and so
-//is generating sequential values to send as acknowledgement data
-//Needs: To read information from Stella and format it
+// Prints input data received from the controller
 void showData() {
   if (newData == true) {
     if (data.button1 || data.button2 || data.button3 || data.button4) {
@@ -288,7 +291,7 @@ void showData() {
       Serial.print(" ");
       Serial.println(data.button4);
     }
-  newData = false;
+    newData = false;
   }
 }
 //==================================================================
@@ -296,7 +299,7 @@ void showData() {
 //Called each loop to update the reply data, takes no parameters.
 //Status: Currently has no outside connections to read from and so
 //is generating sequential values to send as acknowledgement data
-//Needs: To read information from Stella and format it
+//TODO: Read information from Stella and format it
 void updateReplyData() {
   if (counter > 10) {
     if (aData.ballColor < 8) {
@@ -319,7 +322,7 @@ void updateReplyData() {
 }
 //==================================================================
 //=============delayWhileResettingCommandTimeout====================
-// Must use this delay when stepper motor is connected
+// Must use this delay when the stepper motor is connected
 void delayWhileResettingCommandTimeout(uint32_t ms) {
   uint32_t start = millis();
   do {
@@ -328,6 +331,7 @@ void delayWhileResettingCommandTimeout(uint32_t ms) {
 }
 //==================================================================
 //=======================waitForPosition============================
+// Wait for the stepper motor to reach a passed position value
 void waitForPosition(int32_t targetPosition) {
   do {
     tic.resetCommandTimeout();
@@ -335,41 +339,47 @@ void waitForPosition(int32_t targetPosition) {
 }
 //==================================================================
 //===============================around=============================
+// Return whether the first value is within 10 above or below the
+// second value
 bool around(int sensorInput, int value) {
   return (sensorInput > value - 10 && sensorInput < value + 10);
 }
 //==================================================================
 //========findBallColor(float red, float green, float blue)=========
+// Map detected color values to a number representing the color
+// This number is stored in the targetColor global variable
 void findBallColor(float red, float green, float blue) {
-  if(around(red, 145) && around(green, 53) && around(blue, 45)) {
+  // Check if detected values are close to values corresponding to a color
+  // Color values are from printing color sensor data to the serial monitor
+  if (around(red, 145) && around(green, 53) && around(blue, 45)) {
     Serial.println("Red");
     targetColor = 1;
   }
-  else if(around(red, 147) && around(green, 60) && around(blue, 34)) {
+  else if (around(red, 147) && around(green, 60) && around(blue, 34)) {
     Serial.println("Orange");
     targetColor = 2;
   }
-  else if(around(red, 125) && around(green, 128) && around(blue, 45)) {
+  else if (around(red, 125) && around(green, 128) && around(blue, 45)) {
     Serial.println("Yellow");
     targetColor = 3;
   }
-  else if(around(red, 76) && around(green, 113) && around(blue, 50)) {
+  else if (around(red, 76) && around(green, 113) && around(blue, 50)) {
     Serial.println("Green");
     targetColor = 4;
   }
-  else if(around(red, 39) && around(green, 97) && around(blue, 113)) {
+  else if (around(red, 39) && around(green, 97) && around(blue, 113)) {
     Serial.println("Light Blue");
     targetColor = 5;
   }
-  else if(around(red, 28) && around(green, 78) && around(blue, 136)) {
+  else if (around(red, 28) && around(green, 78) && around(blue, 136)) {
     Serial.println("Dark Blue");
     targetColor = 5;
   }
-  else if(around(red, 72) && around(green, 67) && around(blue, 105)) {
+  else if (around(red, 72) && around(green, 67) && around(blue, 105)) {
     Serial.println("Purple");
     targetColor = 6;
   }
-  else if(around(red, 104) && around(green, 54) && around(blue, 81)) {
+  else if (around(red, 104) && around(green, 54) && around(blue, 81)) {
     Serial.println("Pink");
     targetColor = 2;
   }
