@@ -1,4 +1,8 @@
 //Stella Receiver
+// Authors:
+//  Dan Even
+//  Shane J
+
 
 #include "Adafruit_TCS34725.h"
 
@@ -9,6 +13,7 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 volatile bool RotateAuger = false;
 volatile bool ColorSense = false;
 volatile bool RotateBarrel = false;
+volatile bool ExtendingBarrel = false;
 
 enum colorList{ 
   Red, 
@@ -61,6 +66,7 @@ bool rotateAugerDown() {
   return true;
 }
 
+//Uses the sensor to get the color of the ball to be sorted
 bool getColor() {
   if (!RotateAuger) {
     if (!RotateBarrel) {
@@ -74,6 +80,21 @@ bool getColor() {
   }
 }
 
+
+
+
+// Rotates the barrel to dispense/sort the correct color
+// Parameters:
+// colorList c - the color to be dispensed/sorted to
+// bool sort - if TRUE: move to appropriate color for sorting
+//                FALSE: move to appropriate color for dispensing
+bool rotateBarrel(colorList c, bool sort) {
+    if (!RotateAuger) {
+      if (!ColorSense) {
+        
+      }
+    }
+}
 
 void setup() {
   //-----------------------------------------
