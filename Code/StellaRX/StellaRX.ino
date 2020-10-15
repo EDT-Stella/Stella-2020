@@ -9,7 +9,7 @@
 #include <EEPROM.h>
 #include <SoftwareSerial.h>
 #include "Adafruit_TCS34725.h"
-#include <Tic.h>
+#include "Tic.h"
 
 //===============Pin Definitions=================
 #define CE_PIN   9
