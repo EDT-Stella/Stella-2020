@@ -1,17 +1,5 @@
 //Stella Receiver
 
-#include <SPI.h>
-#include <nRF24L01.h>
-#include <RF24.h>
-#include "RoboClaw.h" // Roboclaw 
-#include <Wire.h>     // Wire
-#include <Stepper.h>
-#include <EEPROM.h>
-#include <SoftwareSerial.h>
-#include "Adafruit_TCS34725.h"
-#include "Tic.h"
-
-
 volatile bool RotateAuger = false;
 volatile bool ColorSense = false;
 volatile bool RotateBarrel = false;

@@ -1,4 +1,4 @@
-#include <Tic.h>
+#include "Tic.h"
 #include <Arduino.h>
 
 static const uint16_t Tic03aCurrentTable[33] =
