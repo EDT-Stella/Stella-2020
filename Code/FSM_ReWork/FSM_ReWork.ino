@@ -1,5 +1,11 @@
 //Stella Receiver
 
+#include "Adafruit_TCS34725.h"
+
+//===============Color Sensor Globals============
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
+//===============================================
+
 volatile bool RotateAuger = false;
 volatile bool ColorSense = false;
 volatile bool RotateBarrel = false;
@@ -59,12 +65,28 @@ bool getColor() {
   if (!RotateAuger) {
     if (!RotateBarrel) {
       //Call Color sensor
+      float red, green, blue;
+      tcs.setInterrupt(false);  //Turn on LED
+      delay(60);
+      tcs.setInterrupt(true);  //Turn off LED
+      tcs.getRGB(&red, &green, &blue); // Read color values
     }
   }
 }
 
 
 void setup() {
+  //-----------------------------------------
+  //Color Sensor initialization and settings
+  // Ensures that the color sensor is connected
+  if (tcs.begin()) { // begin() starts the color sensor
+    Serial.println("Found sensor");
+  } else {
+    Serial.println("No TCS34725 found ... check your connections");
+    while (1); // halt!
+  }
+  //-----------------------------------------
+  
   storeColor = Red ;
   dropColor = Purple;
 
