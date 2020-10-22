@@ -41,7 +41,7 @@ ackData aData; //Acknowledgement data to be returned to controller
 volatile bool RotateAuger = false;
 volatile bool ColorSense = false;
 volatile bool RotateBarrel = false;
-volatile bool ExtendingBarrel = false;
+volatile bool ExtendingAuger = false;
 
 enum colorList{ 
   Red, 
@@ -54,12 +54,12 @@ enum colorList{
   Pink
 }storeColor, dropColor;
 
-//Interrupt Flag
+//Interrupt Flag - set to true if RF24 indicates new message
 volatile byte mssg = false;
 //==================================================================
 //======================dataReceived()==============================
 void dataReceived_Interrupt() {
-  Serial.println("Interrupt called");
+  //Serial.println("Interrupt called");
   mssg = true;
   //getData();
 }
@@ -117,8 +117,6 @@ bool getColor() {
     }
   }
 }
-
-
 
 
 // Rotates the barrel to dispense/sort the correct color
