@@ -21,8 +21,7 @@ enum color {
   Orange,
   Yellow,
   Green,
-  LightBlue,
-  DarkBlue,
+  Blue,
   Purple,
   Pink
 } storeColor, dropColor;
@@ -32,29 +31,25 @@ int colorMap[8][3] = {{145, 53, 45},   // Red
                       {147, 60, 34},   // Orange
                       {125, 128, 45},  // Yellow
                       {76, 113, 50},   // Green
-                      {39, 97, 113},   // Light Blue
-                      {28, 78, 136},   // Dark Blue
+                      {28, 78, 136},   // Blue
                       {72, 67, 105},   // Purple
                       {104, 54, 81}};  // Pink
 
 void setDropColor() {
   if (storeColor == Red) {
-    dropColor = Purple; 
-  }
-  else if (storeColor == Orange) {
-    dropColor = Yellow; 
+    dropColor = Blue; 
   }
   else if (storeColor == Yellow) {
-    dropColor = Orange;
+    dropColor = Purple;
   }
   else if (storeColor == Green) {
-    dropColor = LightBlue;
+    dropColor = Red;
   }
-  else if (storeColor == LightBlue) {
-    dropColor = Green;
+  else if (storeColor == Blue) {
+    dropColor = Yellow;
   }
   else if (storeColor == Purple) {
-    dropColor = Red;
+    dropColor = Green;
   }
 }
 
@@ -109,7 +104,7 @@ bool within10(int val1, int val2) {
 // color corresponding to the passed RGB values
 color RGBToColor(float red, float green, float blue) {
   // Iterate through color map
-  for (int i = 0; i < 8; ++i) {
+  for (int i = 0; i < 7; ++i) {
     // Check if the passed RGB values are close to the current color
     if (within10(red, colorMap[i][0]) &&
         within10(green, colorMap[i][1]) &&
