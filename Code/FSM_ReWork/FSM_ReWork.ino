@@ -82,8 +82,13 @@ bool getColor() {
       delay(60);
       tcs.setInterrupt(true);  // Turn off LED
       tcs.getRGB(&red, &green, &blue); // Read color values
-      storeColor = RGBToColor(red, green, blue);
+
+      // Get storeColor from RGB values
+      if (!RGBToColor(red, green, blue, storeColor)) {
+        return false; // Color not found
+      }
       setDropColor();
+      return true; // Color found
     }
   }
 }
@@ -92,7 +97,7 @@ bool getColor() {
 // Parameters:
 // int val1, val2 - values to compare
 // Return:
-// bool of of whether the first value is within +/- 10 of the second value
+// bool of whether the first value is within +/- 10 of the second value
 bool within10(int val1, int val2) {
   return (val1 <= val2 + 10 && val1 >= val2 - 10);
 }
@@ -100,22 +105,24 @@ bool within10(int val1, int val2) {
 // Get a color based on passed RGB values using the color map
 // Parameters:
 // float red, green, blue - color values from the color sensor
+// color result reference - color converted from the passed RGB values
 // Return:
-// color corresponding to the passed RGB values
-color RGBToColor(float red, float green, float blue) {
+// bool of whether a color was found or not
+bool RGBToColor(float red, float green, float blue, color &result) {
   // Iterate through color map
   for (int i = 0; i < 7; ++i) {
     // Check if the passed RGB values are close to the current color
     if (within10(red, colorMap[i][0]) &&
         within10(green, colorMap[i][1]) &&
         within10(blue, colorMap[i][2])) {
-      // Return current color
-      return (color)i;
+          
+      // Set result to current color
+      result = (color)i;
+      return true; // Color found
     }
   }
 
-  // FIX: Return Red (0) when color not detected
-  return Red;
+  return false; // Color not found
 }
 
 // Rotates the barrel to dispense/sort the correct color
