@@ -299,7 +299,6 @@ void loop() {
   Debugger debugger;
   Blinker example(LED_BUILTIN, RATE_BLINKER_BLINK, &debugger);
   
-
   Task *tasks[] = {
     &debugger,
     &example
