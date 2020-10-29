@@ -6,15 +6,43 @@
 
 
 #include "Adafruit_TCS34725.h"
+#include <nRF24L01.h>
+#include <RF24.h>
+
+//===============Pin Definitions=================
+#define CE_PIN   9
+#define CSN_PIN 10
+#define address2 0x80 // Address to Roboclaw
+//===============================================
+
+//===============Radio Globals===================
+const byte thisSlaveAddress[5] = {'R','x','A','A','A'};
+RF24 radio(CE_PIN, CSN_PIN);
+//===============================================
 
 //===============Color Sensor Globals============
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 //===============================================
 
+struct dataReceived { // Data from the controller
+  byte jX;            // this must match dataToSend in the TX
+  byte jY;
+  char pass[7];
+  bool button1, button2, button3, button4, rocker, jsButton;
+  //byte ballColor;  
+};
+dataReceived data; 
+
+struct ackData { //Acknowledgement data
+  byte ballColor;
+  bool ballDispensed;
+};
+ackData aData; //Acknowledgement data to be returned to controller
+
 volatile bool RotateAuger = false;
 volatile bool ColorSense = false;
 volatile bool RotateBarrel = false;
-volatile bool ExtendingBarrel = false;
+volatile bool ExtendingAuger = false;
 
 enum color { 
   Red, 
@@ -35,8 +63,18 @@ int colorMap[8][3] = {{145, 53, 45},   // Red
                       {72, 67, 105},   // Purple
                       {104, 54, 81}};  // Pink
 
-void setDropColor() {
-  if (storeColor == Red) {
+//Interrupt Flag - set to true if RF24 indicates new message
+volatile byte mssg = false;
+//==================================================================
+//======================dataReceived()==============================
+void dataReceived_Interrupt() {
+  //Serial.println("Interrupt called");
+  mssg = true;
+  //getData();
+}
+
+void setDropColor(){
+  if(storeColor == Red) {
     dropColor = Blue; 
   }
   else if (storeColor == Yellow) {
@@ -139,6 +177,18 @@ bool rotateBarrel(color c, bool sort) {
 }
 
 void setup() {
+  //-----------------------------------------
+  //Radio initialization and settings
+  radio.begin();
+  radio.setDataRate( RF24_250KBPS );
+  radio.openReadingPipe(1, thisSlaveAddress);
+  radio.enableAckPayload();
+  radio.startListening();
+  radio.writeAckPayload(1, &aData, sizeof(ackData)); // pre-load data
+  attachInterrupt(digitalPinToInterrupt(2), dataReceived_Interrupt, FALLING);
+  Serial.println("Radio is starting");
+  //-----------------------------------------
+  
   //-----------------------------------------
   //Color Sensor initialization and settings
   // Ensures that the color sensor is connected
