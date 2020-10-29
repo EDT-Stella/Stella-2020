@@ -107,7 +107,6 @@ public:
   Debugger();
   void debugWrite(String debugMsg); //Used for simple debugging of other tasks
   virtual void run(uint32_t now);   //Override the run() method
-  virtual bool canRun(uint32_t now);  //Override the canRun() method
 };
 
 // ***
@@ -221,7 +220,6 @@ class AugerRotateMotor : public TimedTask
   public:
   AugerRotateMotor(/**/);
   virtual void run(uint32_t schTime);
-  virtual bool canRun(uint32_t schTime);
   private:
   
 };
@@ -231,7 +229,6 @@ class AugerMoveActuator : public TimedTask
   public:
   AugerMoveActuator(/**/);
   virtual void run(uint32_t schTime);
-  virtual bool canRun(uint32_t schTime);
   
   private:
   
@@ -240,12 +237,37 @@ class AugerMoveActuator : public TimedTask
 class BarrelRotateStepper : public TimedTask
 {
   public:
-  BarrelRotateStepper(/**/);  
+  BarrelRotateStepper(short _currentColor, short _targetColor);
   virtual void run(uint32_t schTime);
 
   private:
-  
+  short currentColor; // The current index the motor is at
+  short targetColor; // The target index for the motor to move to
 };
+
+BarrelRotateStepper::BarrelRotateStepper
+(short _currentColor, short _targetColor, Debugger *_ptrDebugger){
+  TimedTask(millis());
+  currentColor(_currentColor);
+  targetColor(_targetColor);
+}
+
+void BarrelRotateStepper::run(uint32_t schTime){
+  short distance = targetColor - currentColor;
+
+  // Moves the opposite direction if the distance is greater than 3
+  if (distance > 3) {
+    distance -= 6;
+  }
+  else if (distance < -3) {
+    distance += 6;
+  }
+
+  int targetPos = tic.getCurrentPosition() + (distance * 33.0);
+  tic.setTargetPosition(targetPos);
+  
+  waitForPosition(targetPos);
+}
 
 void setup() {
   Serial.begin(9600);
