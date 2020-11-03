@@ -12,14 +12,28 @@
 #include "Tic.h"
 #include "Task.h"
 #include "TaskScheduler.h"
+#include <Servo.h>
 
 #define RATE_BLINKER_BLINK    500   //Blink LED_BLINKER - Timed Task
 
 //===============Pin Definitions=================
 #define CE_PIN   9
 #define CSN_PIN 10
+#define DROP_DOOR_PIN 2
 #define address2 0x80 // Address to Roboclaw
 //===============================================
+
+//===============State Flags=====================
+// Condition for opening ball drop door
+volatile byte BARREL_IN_POSITION = false; 
+
+//Radio interrupt Flag
+volatile byte MSSG = false; 
+
+//Radio new data flag
+bool newData = false;
+//===============================================
+
 
 //===============Radio Globals===================
 const byte thisSlaveAddress[5] = {'R','x','A','A','A'};
@@ -66,18 +80,16 @@ struct ackData { //Acknowledgement data
 };
 ackData aData; //Acknowledgement data to be returned to controller
 
-bool newData = false;
+
 
 //Only needed for debugging
 int counter = 0;
 
-//Interrupt Flag
-volatile byte mssg = false;
 //==================================================================
 //======================dataReceived()==============================
 void dataReceived_Interrupt() {
-  Serial.println("Interrupt called");
-  mssg = true;
+  //Serial.println("Interrupt called");
+  MSSG = true;
   //getData();
 }
 
@@ -201,13 +213,13 @@ void Blinker::run(uint32_t now)
   if (on) {
     digitalWrite(pin, LOW);
     on = false;
-    ptrDebugger->debugWrite("BLINKER: OFF");
+    //ptrDebugger->debugWrite("BLINKER: OFF");
     // If the LED is off, turn it on and remember the state.
   } else {
     digitalWrite(pin, HIGH);
     on = true;
     //Send output to Serial Monitor via debugger
-    ptrDebugger->debugWrite("BLINKER: ON");
+    //ptrDebugger->debugWrite("BLINKER: ON");
   }
   // Run again in the specified number of milliseconds.
   incRunTime(rate);
@@ -218,41 +230,88 @@ void Blinker::run(uint32_t now)
 //======================AugerRotateMotor==============================
 class AugerRotateMotor : public TimedTask
 {
-  public:
+public:
   AugerRotateMotor(/**/);
   virtual void run(uint32_t schTime);
-  virtual bool canRun(uint32_t schTime);
-  private:
+  
+private:
   
 };
 //==================================================================
 class AugerMoveActuator : public TimedTask
 {
-  public:
+public:
   AugerMoveActuator(/**/);
-  virtual void run(uint32_t schTime);
-  virtual bool canRun(uint32_t schTime);
+  virtual void run(uint32_t now);
   
-  private:
+private:
   
 };
 
 class BarrelRotateStepper : public TimedTask
 {
-  public:
+public:
   BarrelRotateStepper(/**/);  
   virtual void run(uint32_t schTime);
 
-  private:
+private:
   
 };
+//==================================================================
 
-void setup() {
-  Serial.begin(9600);
-  Serial.println("Stella Receiver Starting");
+//==================================================================
+class DropBall : public TriggeredTask
+{
+public:
+  DropBall(uint8_t _pin);
+  virtual void run(uint32_t now);
+  virtual bool canRun(uint32_t now);
+  
+private:
+  uint8_t pin;
+  bool on;
+  bool dropCondition;
+  Servo dropDoor;
+};
 
-  //-----------------------------------------
-  //Radio initialization and settings
+DropBall::DropBall(uint8_t _pin) : TriggeredTask(), pin(_pin), dropCondition(false) 
+{
+  pinMode(pin, OUTPUT); 
+  dropDoor.attach(pin);
+  dropDoor.write(0);
+  
+   
+}
+
+void DropBall::run(uint32_t now) {
+  dropDoor.write(180);
+  delay(500);
+  dropDoor.write(0);
+}
+
+bool DropBall::canRun(uint32_t now) {
+  return BARREL_IN_POSITION;
+}
+//==================================================================
+
+//==================================================================
+class Radio : public TriggeredTask
+{
+public:
+  Radio(uint8_t _pin);
+  virtual void run(uint32_t now);
+  virtual bool canRun(uint32_t now);
+  virtual void updateReplyData();
+  virtual void showData();
+private:
+  uint8_t pin;
+  bool on;
+  bool readCondition;
+  Servo dropDoor;
+};
+
+Radio::Radio(uint8_t _pin) : TriggeredTask(), pin(_pin), readCondition(false) 
+{
   radio.begin();
   radio.setDataRate( RF24_250KBPS );
   radio.openReadingPipe(1, thisSlaveAddress);
@@ -261,47 +320,121 @@ void setup() {
   radio.writeAckPayload(1, &aData, sizeof(ackData)); // pre-load data
   attachInterrupt(digitalPinToInterrupt(2), dataReceived_Interrupt, FALLING);
   Serial.println("Radio is starting");
-  //-----------------------------------------
+}
 
-  //-----------------------------------------
-  //RoboClaw initialization and settings
-  Serial3.begin(57600); // Wire communication with Roboclaw
-  //-----------------------------------------
-
-  //-----------------------------------------
-  //Stepper motor initialization and settings
-  ticSerial.begin(9600);
-  // Read the current color index from address 0 of the EEPROM
-  currentColor = EEPROM.read(0);
-  targetColor = currentColor; // Makes sure the stepper motor doesn't move to a target
-
-  delay(20); // Give time for stepper motor to start
-
-  // Set up stepper motor
-  tic.haltAndSetPosition(0);
-  tic.exitSafeStart();
-  //-----------------------------------------
-
-  //-----------------------------------------
-  //Color Sensor initialization and settings
-  // Ensures that the color sensor is connected
-  if (tcs.begin()) { // begin() starts the color sensor
-    Serial.println("Found sensor");
-  } else {
-    Serial.println("No TCS34725 found ... check your connections");
-    while (1); // halt!
+void Radio::run(uint32_t now) {
+  //Serial.println("Attempting Read");
+  if (radio.available()) {
+    radio.read(&data, sizeof(data));
+    updateReplyData();
+    showData();
+    newData = true;
+    MSSG = false;
+    //Serial.println("Data Received");
   }
-  //-----------------------------------------
+}
+
+void Radio::updateReplyData() {
+  if (counter > 10) {
+    if (aData.ballColor < 8) {
+      aData.ballColor++;
+    } else {
+      aData.ballColor = 0;
+    }
+    counter = 0;
+  } else {
+    counter++;
+  }
+
+  if (aData.ballDispensed == true) {
+    aData.ballDispensed = false;
+  }
+  else {
+    aData.ballDispensed = true;
+  }
+  radio.writeAckPayload(1, &aData, sizeof(ackData)); // load the payload for the next time
+}
+
+void Radio::showData() {
+  if (newData == true) {
+    if (data.button1 || data.button2 || data.button3 || data.button4) {
+      Serial.print("Data received:\nButtons: ");
+      Serial.print(data.button1);
+      Serial.print(" ");
+      Serial.print(data.button2);
+      Serial.print(" ");
+      Serial.print(data.button3);
+      Serial.print(" ");
+      Serial.println(data.button4);
+    }
+    newData = false;
+  }
+}
+
+bool Radio::canRun(uint32_t now) {
+  return MSSG;
+}
+//==================================================================
+
+void setup() {
+//  Serial.begin(9600);
+//  Serial.println("Stella Receiver Starting");
+//
+//  //-----------------------------------------
+//  //Radio initialization and settings
+//  radio.begin();
+//  radio.setDataRate( RF24_250KBPS );
+//  radio.openReadingPipe(1, thisSlaveAddress);
+//  radio.enableAckPayload();
+//  radio.startListening();
+//  radio.writeAckPayload(1, &aData, sizeof(ackData)); // pre-load data
+//  attachInterrupt(digitalPinToInterrupt(2), dataReceived_Interrupt, FALLING);
+//  Serial.println("Radio is starting");
+//  //-----------------------------------------
+//
+//  //-----------------------------------------
+//  //RoboClaw initialization and settings
+//  Serial3.begin(57600); // Wire communication with Roboclaw
+//  //-----------------------------------------
+//
+//  //-----------------------------------------
+//  //Stepper motor initialization and settings
+//  ticSerial.begin(9600);
+//  // Read the current color index from address 0 of the EEPROM
+//  currentColor = EEPROM.read(0);
+//  targetColor = currentColor; // Makes sure the stepper motor doesn't move to a target
+//
+//  delay(20); // Give time for stepper motor to start
+//
+//  // Set up stepper motor
+//  tic.haltAndSetPosition(0);
+//  tic.exitSafeStart();
+//  //-----------------------------------------
+//
+//  //-----------------------------------------
+//  //Color Sensor initialization and settings
+//  // Ensures that the color sensor is connected
+//  if (tcs.begin()) { // begin() starts the color sensor
+//    Serial.println("Found sensor");
+//  } else {
+//    Serial.println("No TCS34725 found ... check your connections");
+//    while (1); // halt!
+//  }
+//  //-----------------------------------------
 }
 
 void loop() {
   //--------------Scheduler Init-----------------
   Debugger debugger;
   Blinker example(LED_BUILTIN, RATE_BLINKER_BLINK, &debugger);
+  DropBall dropBall(DROP_DOOR_PIN);
+  Radio radio(1);
   
   Task *tasks[] = {
     &debugger,
-    &example
+    &example,
+    &dropBall,
+    &radio
     //...Add task objects here
   };
 
