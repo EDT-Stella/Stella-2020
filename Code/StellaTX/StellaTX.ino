@@ -336,8 +336,13 @@ void updateMessage() {
   
   debounceCurrent = millis();
   if ((debounceCurrent - lastRead_But1 > debounceDelay)) {
+<<<<<<< Updated upstream
     if (digitalRead(BUTTON_1) == LOW) {
       if (!DEBUGGING) {
+=======
+    if (digitalRead(BUTTON_1) == HIGH) {
+      if (DEBUGGING) {
+>>>>>>> Stashed changes
         Serial.println("Button 1 was pressed");
       }
       
@@ -395,7 +400,7 @@ void updateMessage() {
 
   debounceCurrent = millis();
   if ((debounceCurrent - lastRead_JoyBut > debounceDelay)) {
-    if (digitalRead(JOY_BUT) == LOW) {
+    if (digitalRead(JOY_BUT) == LOW) { 
       data.jsButton = true;
       lastRead_JoyBut = millis();
     }
