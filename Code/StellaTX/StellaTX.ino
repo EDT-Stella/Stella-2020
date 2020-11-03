@@ -150,7 +150,7 @@ void setup() {
 //LED_5 A4
 void updateLEDS() {
   if (aData.ballColor == Green) {
-    digitalWrite(A0, LOW);
+    digitalWrite(LED_1, LOW);
     digitalWrite(A1, HIGH);
     digitalWrite(A2, HIGH);
     digitalWrite(A3, HIGH);
@@ -341,22 +341,6 @@ void updateMessage() {
   data.button1 = false;
   // Temporary until button1 pullup resistor is fixed
   
-<<<<<<< Updated upstream
-  debounceCurrent = millis();
-  if ((debounceCurrent - lastRead_But1 > debounceDelay)) {
-    if (digitalRead(BUTTON_1) == LOW) {
-      if (!DEBUGGING) {
-        Serial.println("Button 1 was pressed");
-      }
-      
-      data.button1 = true;
-      lastRead_But1 = millis();
-    }
-    else {
-      data.button1 = false;
-    }
-  }
-=======
 //  debounceCurrent = millis();
 //  if ((debounceCurrent - lastRead_But1 > debounceDelay)) {
 //    if (digitalRead(BUTTON_1) == HIGH) {
@@ -371,7 +355,6 @@ void updateMessage() {
 //      data.button1 = false;
 //    }
 //  }
->>>>>>> Stashed changes
 
   debounceCurrent = millis();
   if ((debounceCurrent - lastRead_But2 > debounceDelay)) {
