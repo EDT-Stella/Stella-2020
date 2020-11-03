@@ -119,7 +119,6 @@ public:
   Debugger();
   void debugWrite(String debugMsg); //Used for simple debugging of other tasks
   virtual void run(uint32_t now);   //Override the run() method
-  virtual bool canRun(uint32_t now);  //Override the canRun() method
 };
 
 // ***
@@ -233,8 +232,9 @@ class AugerRotateMotor : public TimedTask
 public:
   AugerRotateMotor(/**/);
   virtual void run(uint32_t schTime);
-  
-private:
+
+  private:
+
   
 };
 //==================================================================
@@ -243,6 +243,7 @@ class AugerMoveActuator : public TimedTask
 public:
   AugerMoveActuator(/**/);
   virtual void run(uint32_t now);
+
   
 private:
   
@@ -250,12 +251,13 @@ private:
 
 class BarrelRotateStepper : public TimedTask
 {
-public:
-  BarrelRotateStepper(/**/);  
+  public:
+  BarrelRotateStepper(short _currentColor, short _targetColor);
   virtual void run(uint32_t schTime);
 
-private:
-  
+  private:
+  short currentColor; // The current index the motor is at
+  short targetColor; // The target index for the motor to move to
 };
 //==================================================================
 
@@ -309,6 +311,30 @@ private:
   bool readCondition;
   Servo dropDoor;
 };
+=======
+BarrelRotateStepper::BarrelRotateStepper
+(short _currentColor, short _targetColor, Debugger *_ptrDebugger){
+  TimedTask(millis());
+  currentColor(_currentColor);
+  targetColor(_targetColor);
+}
+
+void BarrelRotateStepper::run(uint32_t schTime){
+  short distance = targetColor - currentColor;
+
+  // Moves the opposite direction if the distance is greater than 3
+  if (distance > 3) {
+    distance -= 6;
+  }
+  else if (distance < -3) {
+    distance += 6;
+  }
+
+  int targetPos = tic.getCurrentPosition() + (distance * 33.0);
+  tic.setTargetPosition(targetPos);
+  
+  waitForPosition(targetPos);
+}
 
 Radio::Radio(uint8_t _pin) : TriggeredTask(), pin(_pin), readCondition(false) 
 {
@@ -377,8 +403,8 @@ bool Radio::canRun(uint32_t now) {
 //==================================================================
 
 void setup() {
-//  Serial.begin(9600);
-//  Serial.println("Stella Receiver Starting");
+  Serial.begin(9600);
+  Serial.println("Stella Receiver Starting");
 //
 //  //-----------------------------------------
 //  //Radio initialization and settings

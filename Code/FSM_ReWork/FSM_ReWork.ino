@@ -86,20 +86,25 @@ void setSortColor(){
   }
 }
 
-bool rotateAugerUp() {
+bool rotateAuger() {
   if (!ColorSense) {
     if (!RotateBarrel) {
-      //Rotate Auger
-    }
-  }
-  return true;
-}
-
-bool rotateAugerDown() {
-  if (!ColorSense) {
-    if (!RotateBarrel) {
-      //Rotate Auger
-    }
+      delay(20);
+      if (actuatorForward) {
+      roboclaw.ForwardM1(address2, data.jY);
+      }
+      else {
+        roboclaw.BackwardM1(address2, data.jY);
+      }  
+      delay(20);
+      if (motorForward) {
+        roboclaw.ForwardM2(address2, data.jX);
+      }
+      else {
+        roboclaw.BackwardM2(address2, data.jX);
+      }
+      delay(20);
+      }
   }
   return true;
 }
