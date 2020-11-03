@@ -9,6 +9,7 @@
 #include <RF24.h>
 
 bool DEBUGGING = false;
+bool SHOW_INPUT_ACTIVITY = true;
 
 //Controller/Nano GPIO Pin List:
 //D2-4: Buttons
@@ -264,7 +265,9 @@ void loop() {
   currentMillis = millis();
   if (currentMillis - prevMillis >= txIntervalMillis) {
     if (!cmpData(data_Last, data)) {
-      Serial.println("New Data: Sending\n");
+      
+      if (DEBUGGING) Serial.println("New Data: Sending\n");
+      
       send();
     }
     
@@ -310,10 +313,10 @@ void send() {
 void showData() {
   //DEBUGGING, not included in final code.
   if (newData == true) {
-//    Serial.print("Acknowledge data ");
-//    Serial.print(aData.ballColor);
-//    Serial.print(": ");
-//    Serial.println(aData.ballDispensed);
+    Serial.print("Acknowledge data ");
+    Serial.print(aData.ballColor);
+    Serial.print(": ");
+    Serial.println(aData.ballDispensed);
     newData = false;
   }
 }
@@ -333,7 +336,12 @@ void updateMessage() {
   //Prepare next data to be send to Stella. 
   data.jX = map(analogRead(JOY_X), 0, 1024, 0, 255);
   data.jY = map(analogRead(JOY_Y), 0, 1024, 0, 255);
+
+  // PULLUP RESISTOR ON BUTTON1 IS FRIED
+  data.button1 = false;
+  // Temporary until button1 pullup resistor is fixed
   
+<<<<<<< Updated upstream
   debounceCurrent = millis();
   if ((debounceCurrent - lastRead_But1 > debounceDelay)) {
     if (digitalRead(BUTTON_1) == LOW) {
@@ -348,11 +356,27 @@ void updateMessage() {
       data.button1 = false;
     }
   }
+=======
+//  debounceCurrent = millis();
+//  if ((debounceCurrent - lastRead_But1 > debounceDelay)) {
+//    if (digitalRead(BUTTON_1) == HIGH) {
+//      if (DEBUGGING) {
+//        Serial.println("Button 1 was pressed");
+//      }
+//      
+//      data.button1 = true;
+//      lastRead_But1 = millis();
+//    }
+//    else {
+//      data.button1 = false;
+//    }
+//  }
+>>>>>>> Stashed changes
 
   debounceCurrent = millis();
   if ((debounceCurrent - lastRead_But2 > debounceDelay)) {
     if (digitalRead(BUTTON_2) == LOW) {
-      if (DEBUGGING) {
+      if (SHOW_INPUT_ACTIVITY) {
         Serial.println("Button 2 was pressed");
       }
       
@@ -367,7 +391,7 @@ void updateMessage() {
   debounceCurrent = millis();
   if ((debounceCurrent - lastRead_But3 > debounceDelay)) {
     if (digitalRead(BUTTON_3) == LOW) {
-      if (DEBUGGING) {
+      if (SHOW_INPUT_ACTIVITY) {
         Serial.println("Button 3 was pressed");
       }
       
@@ -382,7 +406,7 @@ void updateMessage() {
   debounceCurrent = millis();
   if ((debounceCurrent - lastRead_But4 > debounceDelay)) {
     if (digitalRead(BUTTON_4) == LOW) {
-      if (DEBUGGING) {
+      if (SHOW_INPUT_ACTIVITY) {
         Serial.println("Button 4 was pressed");
       }
       data.button4 = true;
@@ -407,10 +431,16 @@ void updateMessage() {
   bool newRockerRead = (digitalRead(ROCKER) ==  LOW);
     
   if (data.rocker == true && newRockerRead == false) {
-    Serial.println("Rocker switched to OFF");
+    
+    if (SHOW_INPUT_ACTIVITY) {
+      Serial.println("Rocker switched to OFF");
+    }
+    
     data.rocker = newRockerRead;
   } else if (data.rocker == false && newRockerRead == true) {
-    Serial.println("Rocker switched to ON");
+    if (SHOW_INPUT_ACTIVITY) {
+      Serial.println("Rocker switched to ON");
+    }
     data.rocker = newRockerRead;
   }
 }
