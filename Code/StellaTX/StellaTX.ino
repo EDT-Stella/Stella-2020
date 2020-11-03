@@ -414,11 +414,11 @@ void updateMessage() {
   bool newRockerRead = (digitalRead(ROCKER) ==  LOW);
     
   if (data.rocker == true && newRockerRead == false) {
-    
+      
     if (SHOW_INPUT_ACTIVITY) {
       Serial.println("Rocker switched to OFF");
     }
-    
+  
     data.rocker = newRockerRead;
   } else if (data.rocker == false && newRockerRead == true) {
     if (SHOW_INPUT_ACTIVITY) {

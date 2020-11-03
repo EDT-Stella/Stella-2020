@@ -65,14 +65,20 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 short currentColor = 1; // The current index the motor is at
 short targetColor = 1; // The target index for the motor to move to
 
-struct dataReceived { // Data from the controller
-  byte jX;
+// Data from the controller
+// This must match dataToSend in the TX
+struct dataReceived { 
+  byte jX; 
   byte jY;
   char pass[7];
   bool button1, button2, button3, button4, rocker, jsButton;
   byte ballColor;  
 };
-dataReceived data; // this must match dataToSend in the TX
+
+// Struct will hold the data from the controller
+dataReceived data; 
+// Struct will hold the previous data from the controller
+dataReceived lastData;
 
 struct ackData { //Acknowledgement data
   byte ballColor;
@@ -119,6 +125,7 @@ public:
   Debugger();
   void debugWrite(String debugMsg); //Used for simple debugging of other tasks
   virtual void run(uint32_t now);   //Override the run() method
+  virtual bool canRun(uint32_t now);
 };
 
 // ***
@@ -248,17 +255,6 @@ public:
 private:
   
 };
-
-class BarrelRotateStepper : public TimedTask
-{
-  public:
-  BarrelRotateStepper(short _currentColor, short _targetColor);
-  virtual void run(uint32_t schTime);
-
-  private:
-  short currentColor; // The current index the motor is at
-  short targetColor; // The target index for the motor to move to
-};
 //==================================================================
 
 //==================================================================
@@ -296,6 +292,42 @@ bool DropBall::canRun(uint32_t now) {
 }
 //==================================================================
 
+//===================BarrelRotateStepper============================
+//class BarrelRotateStepper : public TimedTask
+//{
+//  public:
+//  BarrelRotateStepper(short _currentColor, short _targetColor,  Debugger *_ptrDebugger);
+//  virtual void run(uint32_t schTime);
+//
+//  private:
+//  short currentColor; // The current index the motor is at
+//  short targetColor; // The target index for the motor to move to
+//};
+//
+//BarrelRotateStepper::BarrelRotateStepper(short _currentColor, short _targetColor, Debugger *_ptrDebugger){
+//  TimedTask(millis());
+//  currentColor(_currentColor);
+//  targetColor(_targetColor);
+//}
+//
+//void BarrelRotateStepper::run(uint32_t schTime){
+//  short distance = targetColor - currentColor;
+//
+//  // Moves the opposite direction if the distance is greater than 3
+//  if (distance > 3) {
+//    distance -= 6;
+//  }
+//  else if (distance < -3) {
+//    distance += 6;
+//  }
+//
+//  int targetPos = tic.getCurrentPosition() + (distance * 33.0);
+//  tic.setTargetPosition(targetPos);
+//  
+//  waitForPosition(targetPos);
+//}
+//==================================================================
+
 //==================================================================
 class Radio : public TriggeredTask
 {
@@ -311,30 +343,6 @@ private:
   bool readCondition;
   Servo dropDoor;
 };
-=======
-BarrelRotateStepper::BarrelRotateStepper
-(short _currentColor, short _targetColor, Debugger *_ptrDebugger){
-  TimedTask(millis());
-  currentColor(_currentColor);
-  targetColor(_targetColor);
-}
-
-void BarrelRotateStepper::run(uint32_t schTime){
-  short distance = targetColor - currentColor;
-
-  // Moves the opposite direction if the distance is greater than 3
-  if (distance > 3) {
-    distance -= 6;
-  }
-  else if (distance < -3) {
-    distance += 6;
-  }
-
-  int targetPos = tic.getCurrentPosition() + (distance * 33.0);
-  tic.setTargetPosition(targetPos);
-  
-  waitForPosition(targetPos);
-}
 
 Radio::Radio(uint8_t _pin) : TriggeredTask(), pin(_pin), readCondition(false) 
 {
@@ -351,6 +359,7 @@ Radio::Radio(uint8_t _pin) : TriggeredTask(), pin(_pin), readCondition(false)
 void Radio::run(uint32_t now) {
   //Serial.println("Attempting Read");
   if (radio.available()) {
+    lastData = data;
     radio.read(&data, sizeof(data));
     updateReplyData();
     showData();
@@ -383,15 +392,28 @@ void Radio::updateReplyData() {
 
 void Radio::showData() {
   if (newData == true) {
-    if (data.button1 || data.button2 || data.button3 || data.button4) {
-      Serial.print("Data received:\nButtons: ");
+    if (data.button1 || data.button2 || 
+        data.button3 || data.button4 || data.jsButton) {
+      Serial.print("Buttons: ");
       Serial.print(data.button1);
       Serial.print(" ");
       Serial.print(data.button2);
       Serial.print(" ");
       Serial.print(data.button3);
       Serial.print(" ");
-      Serial.println(data.button4);
+      Serial.print(data.button4);
+      Serial.print(" ");
+      Serial.println(data.jsButton);
+    }
+
+    if (data.rocker != lastData.rocker) {
+      Serial.print("Rocker switched to ");
+      if (data.rocker) {
+        Serial.println("ON");
+      } 
+      else {
+        Serial.println("OFF");
+      }
     }
     newData = false;
   }
