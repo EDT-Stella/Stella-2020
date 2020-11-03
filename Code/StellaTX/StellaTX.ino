@@ -8,7 +8,7 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-bool DEBUGGING = true;
+bool DEBUGGING = false;
 
 //Controller/Nano GPIO Pin List:
 //D2-4: Buttons
@@ -212,6 +212,8 @@ bool cmpData(dataToSend& data1, dataToSend& data2) {
   bool result = true;
   int xDiff = (int)data1.jX - (int)data2.jX;
   int yDiff = (int)data1.jY - (int)data2.jY;
+    
+
   
   if (xDiff < -5 || xDiff > 5) {
 //    Serial.println("jY\n");
@@ -226,28 +228,28 @@ bool cmpData(dataToSend& data1, dataToSend& data2) {
 //    Serial.println(data2.jX);
     result = false;
   } else if (false) {
-    Serial.println("jX\n");
+    //Serial.println("jX\n");
     result = false;
   } else if (data1.button1 != data2.button1) {
-    Serial.println("b1\n");
+    //Serial.println("b1\n");
     result = false;
   } else if (data1.button2 != data2.button2) {
-    Serial.println("b2\n");
+    //Serial.println("b2\n");
     result = false;
   } else if (data1.button3 != data2.button3) {
-    Serial.println("b3\n");
+    //Serial.println("b3\n");
     result = false;
   } else if (data1.button4 != data2.button4) {
-    Serial.println("b4\n");
+    //Serial.println("b4\n");
     result = false;
   } else if (data1.rocker != data2.rocker) {
-    Serial.println("rocker\n");
+    //Serial.println("rocker\n");
     result = false;
   } else if (data1.jsButton != data2.jsButton) {
-    Serial.println("jsButton\n");
+    //Serial.println("jsButton\n");
     result = false;
   } else if (data1.ballColor != data2.ballColor) {
-    Serial.println("ballColor\n");
+    //Serial.println("ballColor\n");
     result = false;
   } else {
     result = true;
@@ -284,21 +286,21 @@ void send() {
   rslt = radio.write(&data, sizeof(data));
 
   if (rslt) {
-    Serial.println("  Tx succeeded:\t");
+    //Serial.println("  Tx succeeded:\t");
     if (radio.isAckPayloadAvailable()) {
       radio.read(&aData, sizeof(ackData));
       newData = true;
     }
     else {
       if (DEBUGGING) {
-        Serial.println("Acknowledge but no data ");
+        //Serial.println("Acknowledge but no data ");
       }
     }
     //updateMessage();
   }
   else {      
     if (DEBUGGING) {
-      Serial.println("  Tx failed");
+      //Serial.println("  Tx failed");
     }
   }
 
@@ -308,10 +310,10 @@ void send() {
 void showData() {
   //DEBUGGING, not included in final code.
   if (newData == true) {
-    Serial.print("Acknowledge data ");
-    Serial.print(aData.ballColor);
-    Serial.print(": ");
-    Serial.println(aData.ballDispensed);
+//    Serial.print("Acknowledge data ");
+//    Serial.print(aData.ballColor);
+//    Serial.print(": ");
+//    Serial.println(aData.ballDispensed);
     newData = false;
   }
 }
@@ -335,7 +337,7 @@ void updateMessage() {
   debounceCurrent = millis();
   if ((debounceCurrent - lastRead_But1 > debounceDelay)) {
     if (digitalRead(BUTTON_1) == LOW) {
-      if (DEBUGGING) {
+      if (!DEBUGGING) {
         Serial.println("Button 1 was pressed");
       }
       
