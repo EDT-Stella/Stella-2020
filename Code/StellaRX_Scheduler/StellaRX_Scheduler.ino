@@ -241,14 +241,32 @@ public:
 //==================================================================
 class AugerMoveActuator : public TimedTask
 {
-public:
-  AugerMoveActuator(/**/);
-  virtual void run(uint32_t now);
-
+  public:
+  AugerMoveActuator(bool _actuatorForward, Debugger *_ptrDebugger);
+  virtual void run(uint32_t schTime);
   
-private:
+  private:
+  bool actuatorForward;
+  Debugger *_ptrDebugger;
   
 };
+
+AugerMoveActuator::AugerMoveActuator(bool _actuatorForward, Debugger *_ptrDebugger);
+  : TimedTask(millis()),
+  actuatorForward( _actuatorForward),
+  ptrDebugger(_ptrDebugger)
+  {
+    pinMode(pin, OUTPUT);     // Set pin for output.
+  }
+void AugerMoveActuator::run(uint32_t now){
+
+  if (actuatorForward) {
+    roboclaw.ForwardM1(address2, data.jY);
+  }
+  else {
+    roboclaw.BackwardM1(address2, data.jY);
+  }  
+}
 //==================================================================
 
 //==================================================================
