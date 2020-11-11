@@ -28,7 +28,10 @@
 volatile byte BARREL_IN_POSITION = false; 
 
 //Radio interrupt Flag
-volatile byte MSSG = false; 
+volatile byte MSSG = false;
+
+// Color sensor interrupt flag
+volatile byte TCS_STATE = false;
 
 //Radio new data flag
 bool newData = false;
@@ -57,7 +60,8 @@ TicSerial tic(ticSerial);
 //===============================================
 
 //===============Color Sensor Globals============
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
+const int tcsInterruptPin = 3;
 //===============================================
 
 // Each color compartment corresponds to a numerical ID from 1 to 6, with the index increasing as you go clockwise
@@ -404,9 +408,52 @@ bool Radio::canRun(uint32_t now) {
 }
 //==================================================================
 
+//==================================================================
+class ColorSensor : public TriggeredTask
+{
+public:
+  virtual bool canRun(uint32_t now);
+  virtual void run(uint32_t now);
+};
+
+bool ColorSensor::canRun(uint32_t now)
+{
+  return TCS_STATE;
+}
+
+void ColorSensor::run(uint32_t now)
+{
+  // TODO: Check if ball is being detected or not
+
+  // Clear interrupt flag
+  tcs.clearInterrupt();
+  TCS_STATE = false;
+}
+
+// Color sensor interrupt service routine
+void tcsISR() 
+{
+  TCS_STATE = true;
+}
+
+/* tcs.getRawData() does a delay(Integration_Time) after the sensor readout.
+We don't need to wait for the next integration cycle because we receive an interrupt when the integration cycle is complete*/
+void getRawData_noDelay(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
+{
+  *c = tcs.read16(TCS34725_CDATAL);
+  *r = tcs.read16(TCS34725_RDATAL);
+  *g = tcs.read16(TCS34725_GDATAL);
+  *b = tcs.read16(TCS34725_BDATAL);
+}
+//==================================================================
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Stella Receiver Starting");
+
+  // Start color sensor interrupt
+  attachInterrupt(digitalPinToInterrupt(tcsInterruptPin), tcsISR, FALLING);
+  tcs.setInterrupt(true);
 //
 //  //-----------------------------------------
 //  //Radio initialization and settings
