@@ -241,25 +241,32 @@ public:
 //==================================================================
 class AugerMoveActuator : public TimedTask
 {
-  public:
-  AugerMoveActuator(bool _actuatorForward, Debugger *_ptrDebugger);
+public:
+  AugerMoveActuator(int pin, bool _actuatorForward);
   virtual void run(uint32_t schTime);
-  
-  private:
+
+private:
+  int pin;
   bool actuatorForward;
-  Debugger *_ptrDebugger;
   
 };
 
-AugerMoveActuator::AugerMoveActuator(bool _actuatorForward, Debugger *_ptrDebugger);
+AugerMoveActuator::AugerMoveActuator(int _pin, bool _actuatorForward)
   : TimedTask(millis()),
-  actuatorForward( _actuatorForward),
-  ptrDebugger(_ptrDebugger)
+  actuatorForward(_actuatorForward), 
+  pin(_pin)
   {
     pinMode(pin, OUTPUT);     // Set pin for output.
   }
-void AugerMoveActuator::run(uint32_t now){
 
+AugerMoveActuator(int p, bool ac):TimedTask {
+  pin = p;
+  actuatorForward = ac;
+
+  pinMode(pin, OUTPUT);
+}
+  
+void AugerMoveActuator::run(uint32_t now){
   if (actuatorForward) {
     roboclaw.ForwardM1(address2, data.jY);
   }
