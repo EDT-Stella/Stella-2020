@@ -272,19 +272,9 @@ private:
   
 };
 
-AugerMoveActuator::AugerMoveActuator(int _pin, bool _actuatorForward)
-  : TimedTask(millis()),
-  actuatorForward(_actuatorForward), 
-  pin(_pin)
-  {
-    pinMode(pin, OUTPUT);     // Set pin for output.
-  }
-
-AugerMoveActuator(int p, bool ac):TimedTask {
-  pin = p;
-  actuatorForward = ac;
-
-  pinMode(pin, OUTPUT);
+AugerMoveActuator::AugerMoveActuator(int _pin, bool _actuatorForward) : TimedTask(millis()), actuatorForward(_actuatorForward), pin(_pin)
+{
+  pinMode(pin, OUTPUT);     // Set pin for output.
 }
   
 void AugerMoveActuator::run(uint32_t now){
