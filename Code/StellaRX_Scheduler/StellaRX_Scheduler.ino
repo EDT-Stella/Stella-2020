@@ -73,11 +73,25 @@ short currentColor = 1; // The current index the motor is at
 short targetColor = 1; // The target index for the motor to move to
 
 struct dataReceived { // Data from the controller
+  //Unused
   byte jX;
+
+  //Auger Extend/Retract
   byte jY;
+
+  //Unknown
   char pass[7];
+
+  //Button 1 Pickup: Unused
+  //Button 1 Drop:   Drop Ball
+  //Button 2 Pick/Drop: Shift Color Right
+  //Button 3 Pick/Drop: Shift Color Left
+  //Button 4 Pick/Drop: Unused
+  //Button JS Pickup: Rotate Auger Toggle
+  //Rocker: Switch Between Pickup and Drop States
   bool button1, button2, button3, button4, rocker, jsButton;
-  byte ballColor;  
+
+  byte ballColor;
 };
 dataReceived data; // this must match dataToSend in the TX
 
@@ -258,14 +272,10 @@ private:
   
 };
 
-AugerMoveActuator::AugerMoveActuator(int _pin, bool _actuatorForward)
-  : TimedTask(millis()),
-  actuatorForward(_actuatorForward), 
-  pin(_pin)
-  {
-    pinMode(pin, OUTPUT);     // Set pin for output.
-  }
-
+AugerMoveActuator::AugerMoveActuator(int _pin, bool _actuatorForward) : TimedTask(millis()), actuatorForward(_actuatorForward), pin(_pin)
+{
+  pinMode(pin, OUTPUT);     // Set pin for output.
+}
   
 void AugerMoveActuator::run(uint32_t now){
   if (actuatorForward) {
