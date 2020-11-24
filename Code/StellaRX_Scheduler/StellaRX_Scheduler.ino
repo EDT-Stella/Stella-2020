@@ -266,12 +266,6 @@ AugerMoveActuator::AugerMoveActuator(int _pin, bool _actuatorForward)
     pinMode(pin, OUTPUT);     // Set pin for output.
   }
 
-AugerMoveActuator(int p, bool ac):TimedTask {
-  pin = p;
-  actuatorForward = ac;
-
-  pinMode(pin, OUTPUT);
-}
   
 void AugerMoveActuator::run(uint32_t now){
   if (actuatorForward) {
