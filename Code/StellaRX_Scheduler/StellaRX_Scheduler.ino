@@ -21,6 +21,8 @@
 #define CSN_PIN 6 // Radio CSN pin
 #define DROP_DOOR_PIN 12 // Drop door servo pin
 #define TCS_INTERRUPT_PIN 3 // Color sensor interrupt pin
+#define STEPPER_RX 10 // Stepper motor controller RX pin
+#define STEPPER_TX 11 // Stepper motor controller TX pin
 #define address2 0x80 // Address to Roboclaw
 //===============================================
 
@@ -58,7 +60,7 @@ bool motorForward = true;
 #define ticSerial SERIAL_PORT_HARDWARE_OPEN
 #else
 #include <SoftwareSerial.h>
-SoftwareSerial ticSerial(10, 11);
+SoftwareSerial ticSerial(STEPPER_RX, STEPPER_TX);
 #endif
 TicSerial tic(ticSerial);
 //===============================================
