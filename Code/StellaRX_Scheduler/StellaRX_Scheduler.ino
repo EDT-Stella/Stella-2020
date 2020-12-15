@@ -17,9 +17,10 @@
 #define RATE_BLINKER_BLINK    500   //Blink LED_BLINKER - Timed Task
 
 //===============Pin Definitions=================
-#define CE_PIN   9
-#define CSN_PIN 10
-#define DROP_DOOR_PIN 2
+#define CE_PIN  5 // Radio CE pin
+#define CSN_PIN 6 // Radio CSN pin
+#define DROP_DOOR_PIN 12 // Drop door servo pin
+#define TCS_INTERRUPT_PIN 3 // Color sensor interrupt pin
 #define address2 0x80 // Address to Roboclaw
 //===============================================
 
@@ -62,9 +63,8 @@ SoftwareSerial ticSerial(10, 11);
 TicSerial tic(ticSerial);
 //===============================================
 
-//===============Color Sensor Globals============
+//===============Color Sensor Global=============
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
-const int tcsInterruptPin = 3;
 //===============================================
 
 // Each color compartment corresponds to a numerical ID from 1 to 6, with the index increasing as you go clockwise
@@ -502,7 +502,7 @@ void setup() {
   Serial.println("Stella Receiver Starting");
 
   // Start color sensor interrupt
-  attachInterrupt(digitalPinToInterrupt(tcsInterruptPin), tcsISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(TCS_INTERRUPT_PIN), tcsISR, FALLING);
   tcs.setInterrupt(true);
 //
 //  //-----------------------------------------
