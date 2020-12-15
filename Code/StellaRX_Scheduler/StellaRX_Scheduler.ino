@@ -381,8 +381,18 @@ void BarrelRotateStepper::waitForPosition(int32_t targetPosition) {
     tic.resetCommandTimeout();
   } while (tic.getCurrentPosition() != targetPosition);
 }
-//==================================================================
 
+
+//==================================================================
+// class Radio - Author: Dan
+//  Holds all code for communicating through NRF24 tranceiver. 
+//  Uses pins:
+//     SCK  - 52
+//     MISO - 50
+//     MOSI - 51
+//     CE   - 5
+//     CSN  - 6
+//  Status - Complete
 //==================================================================
 class Radio : public TriggeredTask
 {
