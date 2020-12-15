@@ -461,6 +461,14 @@ bool Radio::canRun(uint32_t now) {
 //==================================================================
 
 //==================================================================
+// class ColorSensor - Author: Aden
+//  Contains code for using the Adafruit TCS34725 color sensor.
+//  Uses pins:
+//     INT - 3
+//     SDA - 20
+//     SCL - 21
+// Status - Incomplete
+//==================================================================
 class ColorSensor : public TriggeredTask
 {
 public:
