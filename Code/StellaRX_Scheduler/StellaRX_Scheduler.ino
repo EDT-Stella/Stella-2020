@@ -325,6 +325,12 @@ bool DropBall::canRun(uint32_t now) {
 //==================================================================
 
 //===================BarrelRotateStepper============================
+/* Pins used for stepper motor:
+    STEPPER_RX ..... 10?
+    STEPPER_TX ..... 11?
+    pin1 ..... same as rx?
+    pin2 ..... same as tx?
+*/
 class BarrelRotateStepper : public TriggeredTask
 {
   public:
