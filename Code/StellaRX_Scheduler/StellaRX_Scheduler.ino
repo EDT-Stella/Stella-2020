@@ -17,9 +17,12 @@
 #define RATE_BLINKER_BLINK    500   //Blink LED_BLINKER - Timed Task
 
 //===============Pin Definitions=================
-#define CE_PIN   9
-#define CSN_PIN 10
-#define DROP_DOOR_PIN 2
+#define CE_PIN  5 // Radio CE pin
+#define CSN_PIN 6 // Radio CSN pin
+#define DROP_DOOR_PIN 12 // Drop door servo pin
+#define TCS_INTERRUPT_PIN 3 // Color sensor interrupt pin
+#define STEPPER_RX 10 // Stepper motor controller RX pin
+#define STEPPER_TX 11 // Stepper motor controller TX pin
 #define address2 0x80 // Address to Roboclaw
 //===============================================
 
@@ -57,14 +60,13 @@ bool motorForward = true;
 #define ticSerial SERIAL_PORT_HARDWARE_OPEN
 #else
 #include <SoftwareSerial.h>
-SoftwareSerial ticSerial(10, 11);
+SoftwareSerial ticSerial(STEPPER_RX, STEPPER_TX);
 #endif
 TicSerial tic(ticSerial);
 //===============================================
 
-//===============Color Sensor Globals============
+//===============Color Sensor Global=============
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
-const int tcsInterruptPin = 3;
 //===============================================
 
 // Each color compartment corresponds to a numerical ID from 1 to 6, with the index increasing as you go clockwise
@@ -323,6 +325,11 @@ bool DropBall::canRun(uint32_t now) {
 //==================================================================
 
 //===================BarrelRotateStepper============================
+/* Niraj Salunkhe
+ * Pins used for stepper motor:
+           pin1 .... STEPPER_RX ..... 10
+           pin2 .... STEPPER_TX ..... 11
+*/
 class BarrelRotateStepper : public TriggeredTask
 {
   public:
@@ -374,8 +381,18 @@ void BarrelRotateStepper::waitForPosition(int32_t targetPosition) {
     tic.resetCommandTimeout();
   } while (tic.getCurrentPosition() != targetPosition);
 }
-//==================================================================
 
+
+//==================================================================
+// class Radio - Author: Dan
+//  Holds all code for communicating through NRF24 tranceiver. 
+//  Uses pins:
+//     SCK  - 52
+//     MISO - 50
+//     MOSI - 51
+//     CE   - 5
+//     CSN  - 6
+//  Status - Complete
 //==================================================================
 class Radio : public TriggeredTask
 {
@@ -459,6 +476,14 @@ bool Radio::canRun(uint32_t now) {
 //==================================================================
 
 //==================================================================
+// class ColorSensor - Author: Aden
+//  Contains code for using the Adafruit TCS34725 color sensor.
+//  Uses pins:
+//     INT - 3
+//     SDA - 20
+//     SCL - 21
+// Status - Incomplete
+//==================================================================
 class ColorSensor : public TriggeredTask
 {
 public:
@@ -502,7 +527,7 @@ void setup() {
   Serial.println("Stella Receiver Starting");
 
   // Start color sensor interrupt
-  attachInterrupt(digitalPinToInterrupt(tcsInterruptPin), tcsISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(TCS_INTERRUPT_PIN), tcsISR, FALLING);
   tcs.setInterrupt(true);
 //
 //  //-----------------------------------------
