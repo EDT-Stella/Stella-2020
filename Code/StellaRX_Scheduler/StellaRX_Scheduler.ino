@@ -1,8 +1,9 @@
 //Stella Receiver
 
 #include <SPI.h>
-#include "nRF24L01.h"
-#include "RF24.h"
+//#include "nRF24L01.h"
+//#include "RF24.h"
+#include <RF24.h>
 #include "RoboClaw.h" // Roboclaw 
 #include <Wire.h>     // Wire
 #include <Stepper.h>
@@ -116,137 +117,137 @@ void dataReceived_Interrupt() {
   //getData();
 }
 
-/*****************************************************************************************
-*  Class:    Debugger
-* Task Type:  Task (always runs)
-* Purpose:  This expands on Alan Burlison's original example code which demonstrates
-*       a task that reads from the serial port and echoes to the Serial Monitor.
-*       I've expanded it so that other classes use a pointer to the debugger object
-*       to output simple debug messages while this example executes.
-*       Classes that use the debugger object are passed a reference to &debugger
-*       in their respective constructors.
-*
-*       For example: Blinker(uint8_t _pin, uint32_t _rate, Debugger *_ptrDebugger);
-*
-*       To output debug information use: ptrDebugger->debugWrite("debug info");
-*
-* Notes:    Yeah, I lazily used the String() function in this demonstration. Suedfbvbvfbfvvvvvvvb  me.            
-******************************************************************************************/
+///*****************************************************************************************
+//*  Class:    Debugger
+//* Task Type:  Task (always runs)
+//* Purpose:  This expands on Alan Burlison's original example code which demonstrates
+//*       a task that reads from the serial port and echoes to the Serial Monitor.
+//*       I've expanded it so that other classes use a pointer to the debugger object
+//*       to output simple debug messages while this example executes.
+//*       Classes that use the debugger object are passed a reference to &debugger
+//*       in their respective constructors.
+//*
+//*       For example: Blinker(uint8_t _pin, uint32_t _rate, Debugger *_ptrDebugger);
+//*
+//*       To output debug information use: ptrDebugger->debugWrite("debug info");
+//*
+//* Notes:    Yeah, I lazily used the String() function in this demonstration. Suedfbvbvfbfvvvvvvvb  me.            
+//******************************************************************************************/
+//
+//// ***
+//// *** Define the Debugger Class as type Task
+//// ***
+//class Debugger : public Task
+//{
+//public:
+//  Debugger();
+//  void debugWrite(String debugMsg); //Used for simple debugging of other tasks
+//  virtual void run(uint32_t now);   //Override the run() method
+//  virtual bool canRun(uint32_t now);
+//};
+//
+//// ***
+//// *** Debugger Constructor
+//// ***
+//Debugger::Debugger()
+//  : Task()
+//  {
+//    Serial.begin(57600);
+//  }
+//
+//// ***
+//// *** Debugger::canRun() <--checked by TaskScheduler
+//// ***
+//bool Debugger::canRun(uint32_t now)
+//{
+//  return Serial.available() > 0;
+//}
+//
+//// ***
+//// *** Debugger::run() <--executed by TaskScheduler as a result of canRun() returning true.
+//// ***
+//void Debugger::run(uint32_t now)
+//{
+//  uint16_t byteCount = 0;
+//  
+//  Serial.println("-----------------");
+//  Serial.println("Input Received...");
+//  Serial.println("-----------------");
+//  while (Serial.available() > 0) {
+//    int byte = Serial.read();
+//    Serial.print("'") ;
+//    Serial.print(char(byte));
+//    Serial.print("' = ");
+//    Serial.print(byte, DEC);
+//    Serial.println(" ");
+//    if (byte == '\r') {
+//      Serial.print('\n', DEC);
+//    }
+//    
+//    byteCount++;
+//  }
+//  
+//  Serial.println("-----------------");
+//  Serial.print("Bytes Received: "); Serial.println(String(byteCount));
+//  Serial.println("-----------------");
+//  
+//}
+//
+//// ***
+//// *** Debugger::debugWrite() <--provides basic debug info from other tasks
+//// ***
+//void Debugger::debugWrite(String debugMsg)
+//{
+//  Serial.println(debugMsg);
+//}
 
-// ***
-// *** Define the Debugger Class as type Task
-// ***
-class Debugger : public Task
-{
-public:
-  Debugger();
-  void debugWrite(String debugMsg); //Used for simple debugging of other tasks
-  virtual void run(uint32_t now);   //Override the run() method
-  virtual bool canRun(uint32_t now);
-};
-
-// ***
-// *** Debugger Constructor
-// ***
-Debugger::Debugger()
-  : Task()
-  {
-    Serial.begin(57600);
-  }
-
-// ***
-// *** Debugger::canRun() <--checked by TaskScheduler
-// ***
-bool Debugger::canRun(uint32_t now)
-{
-  return Serial.available() > 0;
-}
-
-// ***
-// *** Debugger::run() <--executed by TaskScheduler as a result of canRun() returning true.
-// ***
-void Debugger::run(uint32_t now)
-{
-  uint16_t byteCount = 0;
-  
-  Serial.println("-----------------");
-  Serial.println("Input Received...");
-  Serial.println("-----------------");
-  while (Serial.available() > 0) {
-    int byte = Serial.read();
-    Serial.print("'") ;
-    Serial.print(char(byte));
-    Serial.print("' = ");
-    Serial.print(byte, DEC);
-    Serial.println(" ");
-    if (byte == '\r') {
-      Serial.print('\n', DEC);
-    }
-    
-    byteCount++;
-  }
-  
-  Serial.println("-----------------");
-  Serial.print("Bytes Received: "); Serial.println(String(byteCount));
-  Serial.println("-----------------");
-  
-}
-
-// ***
-// *** Debugger::debugWrite() <--provides basic debug info from other tasks
-// ***
-void Debugger::debugWrite(String debugMsg)
-{
-  Serial.println(debugMsg);
-}
-
-//======================Example Task==============================
-class Blinker : public TimedTask
-{
-public:
-  // Create a new blinker for the specified pin and rate.
-  Blinker(uint8_t _pin, uint32_t _rate, Debugger *_ptrDebugger);
-  virtual void run(uint32_t now);
-private:
-  uint8_t pin;        // LED pin.
-  uint32_t rate;        // Blink rate.
-  bool on;          // Current state of the LED.
-  Debugger *ptrDebugger;    // Pointer to debugger
-};
-
-// ***
-// *** Blinker Constructor
-// ***
-Blinker::Blinker(uint8_t _pin, uint32_t _rate, Debugger *_ptrDebugger)
-  : TimedTask(millis()),
-  pin(_pin),
-  rate(_rate),
-  on(false),
-  ptrDebugger(_ptrDebugger)
-  {
-    pinMode(pin, OUTPUT);     // Set pin for output.
-  }
-
-// ***
-// *** Blinker::run() <--executed by TaskScheduler as a result of canRun() returning true.
-// ***
-void Blinker::run(uint32_t now)
-{
-  // If the LED is on, turn it off and remember the state.
-  if (on) {
-    digitalWrite(pin, LOW);
-    on = false;
-    //ptrDebugger->debugWrite("BLINKER: OFF");
-    // If the LED is off, turn it on and remember the state.
-  } else {
-    digitalWrite(pin, HIGH);
-    on = true;
-    //Send output to Serial Monitor via debugger
-    //ptrDebugger->debugWrite("BLINKER: ON");
-  }
-  // Run again in the specified number of milliseconds.
-  incRunTime(rate);
-}
+////======================Example Task==============================
+//class Blinker : public TimedTask
+//{
+//public:
+//  // Create a new blinker for the specified pin and rate.
+//  Blinker(uint8_t _pin, uint32_t _rate, Debugger *_ptrDebugger);
+//  virtual void run(uint32_t now);
+//private:
+//  uint8_t pin;        // LED pin.
+//  uint32_t rate;        // Blink rate.
+//  bool on;          // Current state of the LED.
+//  Debugger *ptrDebugger;    // Pointer to debugger
+//};
+//
+//// ***
+//// *** Blinker Constructor
+//// ***
+//Blinker::Blinker(uint8_t _pin, uint32_t _rate, Debugger *_ptrDebugger)
+//  : TimedTask(millis()),
+//  pin(_pin),
+//  rate(_rate),
+//  on(false),
+//  ptrDebugger(_ptrDebugger)
+//  {
+//    pinMode(pin, OUTPUT);     // Set pin for output.
+//  }
+//
+//// ***
+//// *** Blinker::run() <--executed by TaskScheduler as a result of canRun() returning true.
+//// ***
+//void Blinker::run(uint32_t now)
+//{
+//  // If the LED is on, turn it off and remember the state.
+//  if (on) {
+//    digitalWrite(pin, LOW);
+//    on = false;
+//    //ptrDebugger->debugWrite("BLINKER: OFF");
+//    // If the LED is off, turn it on and remember the state.
+//  } else {
+//    digitalWrite(pin, HIGH);
+//    on = true;
+//    //Send output to Serial Monitor via debugger
+//    //ptrDebugger->debugWrite("BLINKER: ON");
+//  }
+//  // Run again in the specified number of milliseconds.
+//  incRunTime(rate);
+//}
 
 //==================================================================
 
@@ -522,13 +523,50 @@ void getRawData_noDelay(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
 }
 //==================================================================
 
-void setup() {
+//==================================================================
+// class KeyboardInput - Author: Dan
+//  Uses pins:
+//     None
+// Status - Incomplete
+//==================================================================
+class KeyboardInput : public TriggeredTask
+{
+public:
+  KeyboardInput(uint8_t _pin);
+  virtual bool canRun(uint32_t now);
+  virtual void run(uint32_t now);
+
+private:
+  
+};
+
+KeyboardInput::KeyboardInput(uint8_t _pin) {
   Serial.begin(9600);
   Serial.println("Stella Receiver Starting");
+}
 
+void KeyboardInput::run(uint32_t now)
+{
+  Serial.print("Reponse");
+}
+
+bool KeyboardInput::canRun(uint32_t now)
+{
+  return (Serial.available() > 0);
+}
+
+
+
+
+
+
+//==================================================================
+
+void setup() {
   // Start color sensor interrupt
   attachInterrupt(digitalPinToInterrupt(TCS_INTERRUPT_PIN), tcsISR, FALLING);
   tcs.setInterrupt(true);
+
 //
 //  //-----------------------------------------
 //  //Radio initialization and settings
@@ -575,19 +613,22 @@ void setup() {
 
 void loop() {
   //--------------Scheduler Init-----------------
-  Debugger debugger;
-  Blinker example(LED_BUILTIN, RATE_BLINKER_BLINK, &debugger);
+  //Debugger debugger;
+  //Blinker example(LED_BUILTIN, RATE_BLINKER_BLINK, &debugger);
   DropBall dropBall(DROP_DOOR_PIN);
   Radio radio(1);
+  KeyboardInput input(1);
   
   Task *tasks[] = {
-    &debugger,
-    &example,
+    //&debugger,
+    //&example,
     &dropBall,
-    &radio
+    &radio,
+    &input
     //...Add task objects here
   };
 
+  
   // ***
   // *** Instantiate the TaskScheduler and fill it with tasks.      
   // ***
