@@ -364,7 +364,7 @@ void BarrelRotateStepper::run(uint32_t now){
   else if (distance < -3) {
     distance += 6;
   }
-
+  
   int32_t targetPos = tic.getCurrentPosition() + (distance * 33.0);
   tic.setTargetPosition(targetPos);
   
@@ -541,13 +541,14 @@ private:
 };
 
 KeyboardInput::KeyboardInput(uint8_t _pin) {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Serial.println("Stella Receiver Starting");
 }
 
 void KeyboardInput::run(uint32_t now)
 {
-  Serial.print("Reponse");
+  String input = Serial.readString();
+  Serial.println(input);
 }
 
 bool KeyboardInput::canRun(uint32_t now)
@@ -555,31 +556,16 @@ bool KeyboardInput::canRun(uint32_t now)
   return (Serial.available() > 0);
 }
 
-
-
-
-
-
 //==================================================================
 
 void setup() {
-  // Start color sensor interrupt
-  attachInterrupt(digitalPinToInterrupt(TCS_INTERRUPT_PIN), tcsISR, FALLING);
-  tcs.setInterrupt(true);
+  Serial.begin(9600);
+  Serial.print("Print");
 
-//
-//  //-----------------------------------------
-//  //Radio initialization and settings
-//  radio.begin();
-//  radio.setDataRate( RF24_250KBPS );
-//  radio.openReadingPipe(1, thisSlaveAddress);
-//  radio.enableAckPayload();
-//  radio.startListening();
-//  radio.writeAckPayload(1, &aData, sizeof(ackData)); // pre-load data
-//  attachInterrupt(digitalPinToInterrupt(2), dataReceived_Interrupt, FALLING);
-//  Serial.println("Radio is starting");
-//  //-----------------------------------------
-//
+  // Start color sensor interrupt
+  //attachInterrupt(digitalPinToInterrupt(TCS_INTERRUPT_PIN), tcsISR, FALLING);
+  //tcs.setInterrupt(true);
+
 //  //-----------------------------------------
 //  //RoboClaw initialization and settings
 //  Serial3.begin(57600); // Wire communication with Roboclaw
@@ -597,17 +583,6 @@ void setup() {
 //  // Set up stepper motor
 //  tic.haltAndSetPosition(0);
 //  tic.exitSafeStart();
-//  //-----------------------------------------
-//
-//  //-----------------------------------------
-//  //Color Sensor initialization and settings
-//  // Ensures that the color sensor is connected
-//  if (tcs.begin()) { // begin() starts the color sensor
-//    Serial.println("Found sensor");
-//  } else {
-//    Serial.println("No TCS34725 found ... check your connections");
-//    while (1); // halt!
-//  }
 //  //-----------------------------------------
 }
 
