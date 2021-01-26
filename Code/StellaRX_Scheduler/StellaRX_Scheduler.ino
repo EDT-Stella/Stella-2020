@@ -521,6 +521,12 @@ bool ColorSensor::canRun(uint32_t now)
 void ColorSensor::run(uint32_t now)
 {
   // TODO: Check if ball is being detected or not
+  // Get detected color
+  uint16_t r, g, b, c;  
+  getRawData_noDelay(&r, &g, &b, &c); 
+  //Serial.print("R: "); Serial.print(r); 
+  //Serial.print("\tG: "); Serial.print(g); 
+  //Serial.print("\tB: "); Serial.println(b);
 
   // Clear interrupt flag
   tcs.clearInterrupt();
