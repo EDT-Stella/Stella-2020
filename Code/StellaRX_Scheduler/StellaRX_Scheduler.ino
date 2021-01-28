@@ -403,9 +403,30 @@ bool Radio::canRun(uint32_t now) {
 class ColorSensor : public TriggeredTask
 {
 public:
+  ColorSensor();
   virtual bool canRun(uint32_t now);
   virtual void run(uint32_t now);
 };
+
+// Color sensor setup
+ColorSensor::ColorSensor() {
+  // Start color sensor interrupt
+  pinMode(TCS_INTERRUPT_PIN, INPUT_PULLUP); //TCS interrupt output is Active-LOW and Open-Drain
+  attachInterrupt(digitalPinToInterrupt(TCS_INTERRUPT_PIN), tcsISR, FALLING);
+  
+  if (tcs.begin()) {  
+    Serial.println("Found sensor"); 
+  } else {  
+    Serial.println("No TCS34725 found ... check your connections"); 
+    while (1);  
+  }
+        
+  // Set persistence filter to generate an interrupt for every RGB Cycle, regardless of the integration limits  
+  tcs.write8(TCS34725_PERS, TCS34725_PERS_NONE); 
+  tcs.setInterrupt(true);
+
+  Serial.flush();
+}
 
 bool ColorSensor::canRun(uint32_t now)
 {
@@ -415,6 +436,12 @@ bool ColorSensor::canRun(uint32_t now)
 void ColorSensor::run(uint32_t now)
 {
   // TODO: Check if ball is being detected or not
+  // Get detected color
+  uint16_t r, g, b, c;  
+  getRawData_noDelay(&r, &g, &b, &c); 
+  //Serial.print("R: "); Serial.print(r); 
+  //Serial.print("\tG: "); Serial.print(g); 
+  //Serial.print("\tB: "); Serial.println(b);
 
   // Clear interrupt flag
   tcs.clearInterrupt();
@@ -499,10 +526,6 @@ void setup() {
   Serial.begin(9600);
   Serial.print("Print");
 
-  // Start color sensor interrupt
-  //attachInterrupt(digitalPinToInterrupt(TCS_INTERRUPT_PIN), tcsISR, FALLING);
-  //tcs.setInterrupt(true);
-
 //  //-----------------------------------------
 //  //RoboClaw initialization and settings
 //  Serial3.begin(57600); // Wire communication with Roboclaw
@@ -527,6 +550,7 @@ void loop() {
   //--------------Scheduler Init-----------------
   //Debugger debugger;
   //Blinker example(LED_BUILTIN, RATE_BLINKER_BLINK, &debugger);
+  ColorSensor colorSensor;
   DropBall dropBall(DROP_DOOR_PIN);
   Radio radio(1);
   KeyboardInput input(1);
@@ -534,6 +558,7 @@ void loop() {
   Task *tasks[] = {
     //&debugger,
     //&example,
+    &colorSensor,
     &dropBall,
     &radio,
     &input
