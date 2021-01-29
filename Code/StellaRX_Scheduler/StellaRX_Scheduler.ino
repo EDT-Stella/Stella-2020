@@ -98,74 +98,46 @@ struct dataReceived { // Data from the controller
 };
 dataReceived data; // this must match dataToSend in the TX
 
+void printData() {
+  Serial.print("Button 1: ");
+  Serial.println(data.button1);
+  Serial.print("Button 2: ");
+  Serial.println(data.button2);
+  Serial.print("Button 3: ");
+  Serial.println(data.button3);
+  Serial.print("Button 4: ");
+  Serial.println(data.button4);
+  Serial.print("JS Button: ");
+  Serial.println(data.jsButton);
+
+  Serial.print("Rocker 1: ");
+  Serial.println(data.rocker1);
+  Serial.print("Rocker 2: ");
+  Serial.println(data.rocker2);
+  
+  Serial.print("JS X: ");
+  Serial.println(data.jX);
+  Serial.print("JS Y: ");
+  Serial.println(data.jY);
+}
+
 struct ackData { //Acknowledgement data
   byte ballColor;
   bool ballDispensed;
 };
 ackData aData; //Acknowledgement data to be returned to controller
 
-
-
 //Only needed for debugging
 int counter = 0;
 
-//==================================================================
 //======================dataReceived()==============================
 void dataReceived_Interrupt() {
   //Serial.println("Interrupt called");
   MSSG = true;
   //getData();
 }
-
-////======================Example Task==============================
-//class Blinker : public TimedTask
-//{
-//public:
-//  // Create a new blinker for the specified pin and rate.
-//  Blinker(uint8_t _pin, uint32_t _rate, Debugger *_ptrDebugger);
-//  virtual void run(uint32_t now);
-//private:
-//  uint8_t pin;        // LED pin.
-//  uint32_t rate;        // Blink rate.
-//  bool on;          // Current state of the LED.
-//  Debugger *ptrDebugger;    // Pointer to debugger
-//};
-//
-//// ***
-//// *** Blinker Constructor
-//// ***
-//Blinker::Blinker(uint8_t _pin, uint32_t _rate, Debugger *_ptrDebugger)
-//  : TimedTask(millis()),
-//  pin(_pin),
-//  rate(_rate),
-//  on(false),
-//  ptrDebugger(_ptrDebugger)
-//  {
-//    pinMode(pin, OUTPUT);     // Set pin for output.
-//  }
-//
-//// ***
-//// *** Blinker::run() <--executed by TaskScheduler as a result of canRun() returning true.
-//// ***
-//void Blinker::run(uint32_t now)
-//{
-//  // If the LED is on, turn it off and remember the state.
-//  if (on) {
-//    digitalWrite(pin, LOW);
-//    on = false;
-//    //ptrDebugger->debugWrite("BLINKER: OFF");
-//    // If the LED is off, turn it on and remember the state.
-//  } else {
-//    digitalWrite(pin, HIGH);
-//    on = true;
-//    //Send output to Serial Monitor via debugger
-//    //ptrDebugger->debugWrite("BLINKER: ON");
-//  }
-//  // Run again in the specified number of milliseconds.
-//  incRunTime(rate);
-//}
-
 //==================================================================
+
 
 //======================AugerRotateMotor==============================
 class AugerRotateMotor : public TimedTask
@@ -176,9 +148,10 @@ public:
 
   private:
 };
-
-
 //==================================================================
+
+
+//======================AugerMoveActuator===========================
 class AugerMoveActuator : public TimedTask
 {
 public:
@@ -206,7 +179,8 @@ void AugerMoveActuator::run(uint32_t now){
 }
 //==================================================================
 
-//==================================================================
+
+//===========================DropBall===============================
 class DropBall : public TriggeredTask
 {
 public:
@@ -230,15 +204,27 @@ DropBall::DropBall(uint8_t _pin) : TriggeredTask(), pin(_pin), dropCondition(fal
 }
 
 void DropBall::run(uint32_t now) {
+  data.button1 = false;
+  
+  Serial.println("Dropping ball now.");
   dropDoor.write(180);
   delay(500);
   dropDoor.write(0);
+
+  
 }
 
 bool DropBall::canRun(uint32_t now) {
-  return BARREL_IN_POSITION;
+  bool canDrop = false;
+
+  if (data.rocker2 == true && data.button1 == true) {
+    canDrop = true;
+  }
+  
+  return canDrop;
 }
 //==================================================================
+
 
 //===================BarrelRotateStepper============================
 /* Niraj Salunkhe
@@ -490,6 +476,8 @@ KeyboardInput::KeyboardInput(uint8_t _pin) {
 void KeyboardInput::run(uint32_t now)
 {
   String input = Serial.readString();
+  int input_size = input.length();
+  input[input_size - 1] = '\0';
 
   if (input == "1") {
     data.button1 = true;
@@ -512,7 +500,24 @@ void KeyboardInput::run(uint32_t now)
   else if (input == "j") {
     data.jsButton = true;
   }
-  Serial.print(input);
+  else if (input == "UP") {
+    data.jY = 255;
+  }
+  else if (input == "DOWN") {
+    data.jY = 0;
+  }
+  else if (input == "LEFT") {
+    data.jY = 0;
+  }
+  else if (input == "RIGHT") {
+    data.jY = 255;
+  }
+  else if (input == "CENTER") {
+    data.jX = 127;
+    data.jY = 127;
+  }
+  Serial.println(input);
+  printData();
 }
 
 bool KeyboardInput::canRun(uint32_t now)
@@ -548,17 +553,13 @@ void setup() {
 
 void loop() {
   //--------------Scheduler Init-----------------
-  //Debugger debugger;
-  //Blinker example(LED_BUILTIN, RATE_BLINKER_BLINK, &debugger);
-  ColorSensor colorSensor;
+  //ColorSensor colorSensor;
   DropBall dropBall(DROP_DOOR_PIN);
   Radio radio(1);
   KeyboardInput input(1);
   
   Task *tasks[] = {
-    //&debugger,
-    //&example,
-    &colorSensor,
+    //&colorSensor,
     &dropBall,
     &radio,
     &input
