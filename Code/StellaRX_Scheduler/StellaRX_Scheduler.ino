@@ -74,6 +74,7 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS347
 // and looping back to 1 when you go clockwise from 6
 short currentColor = 1; // The current index the motor is at
 short targetColor = 1; // The target index for the motor to move to
+short NUM_COLORS = 6;
 
 struct dataReceived { // Data from the controller
   //Unused
@@ -210,7 +211,6 @@ void DropBall::run(uint32_t now) {
   dropDoor.write(180);
   delay(500);
   dropDoor.write(0);
-
   
 }
 
@@ -257,6 +257,8 @@ BarrelRotateStepper::BarrelRotateStepper(uint32_t _pin1, uint32_t _pin2, short _
 
 void BarrelRotateStepper::run(uint32_t now){
   short distance = targetColor - currentColor;
+  Serial.print("Color moved by: ");
+  Serial.println(distance);
 
   // Moves the opposite direction if the distance is greater than 3
   if (distance > 3) {
@@ -275,7 +277,30 @@ void BarrelRotateStepper::run(uint32_t now){
 }
 
 bool BarrelRotateStepper::canRun(uint32_t now) {
-  return ROTATE_BARREL;
+  bool canRun = false;
+
+  if (data.rocker1 == true && data.rocker2 == false) {
+    if (data.button2 == true) {
+      canRun = true;
+      data.button2 = false;
+      if (targetColor == NUM_COLORS - 1) {
+        targetColor = 0;
+      } else {
+        targetColor++;
+      }
+    }
+    if (data.button3 == true) {
+      canRun = true;
+      data.button3 = false;
+      if (targetColor == 0) {
+        targetColor = NUM_COLORS - 1;
+      } else {
+        targetColor--;
+      }
+    }
+  }
+  
+  return canRun;
 }
 
 void BarrelRotateStepper::waitForPosition(int32_t targetPosition) {
