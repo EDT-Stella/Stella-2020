@@ -155,8 +155,9 @@ public:
 class AugerMoveActuator : public TimedTask
 {
 public:
-  AugerMoveActuator(int pin, bool _actuatorForward);
+  AugerMoveActuator();
   virtual void run(uint32_t schTime);
+  virtual bool canRun(uint32_t now);
 
 private:
   int pin;
@@ -164,18 +165,29 @@ private:
   
 };
 
-AugerMoveActuator::AugerMoveActuator(int _pin, bool _actuatorForward) : TimedTask(millis()), actuatorForward(_actuatorForward), pin(_pin)
-{
-  pinMode(pin, OUTPUT);     // Set pin for output.
-}
+AugerMoveActuator::AugerMoveActuator() : TimedTask(millis()) {}
   
 void AugerMoveActuator::run(uint32_t now){
   if (actuatorForward) {
-    roboclaw.ForwardM1(address2, data.jY);
+    Serial.println("Running actuator forward.");
+    //roboclaw.ForwardM1(address2, data.jY);
   }
   else {
-    roboclaw.BackwardM1(address2, data.jY);
-  }  
+    Serial.println("Running actuator backward.");
+    //roboclaw.BackwardM1(address2, data.jY);
+  }
+
+  data.jY = 127;
+}
+
+bool AugerMoveActuator::canRun(uint32_t now) {
+  bool canActuate = false;
+
+  if (data.rocker1 && data.jY != 127) {
+    canActuate = true;
+  }
+
+  return canActuate;
 }
 //==================================================================
 
@@ -554,12 +566,14 @@ void setup() {
 void loop() {
   //--------------Scheduler Init-----------------
   //ColorSensor colorSensor;
+  AugerMoveActuator augerMoveActuator;
   DropBall dropBall(DROP_DOOR_PIN);
   Radio radio(1);
   KeyboardInput input(1);
   
   Task *tasks[] = {
     //&colorSensor,
+    &augerMoveActuator,
     &dropBall,
     &radio,
     &input
