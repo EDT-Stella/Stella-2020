@@ -139,8 +139,7 @@ void dataReceived_Interrupt() {
 }
 
 //======================AugerRotateMotor==============================
-class AugerRotateMotor : public TriggeredTask
-{
+class AugerRotateMotor : public TriggeredTask {
   
   
 public:
@@ -152,20 +151,27 @@ public:
   uint8_t pin;
 };
 
-AugerRotateMotor::AugerRotateMotor(uint8_t _pin) : TriggeredTask(), pin(_pin)
-{
+AugerRotateMotor::AugerRotateMotor(uint8_t _pin) : TriggeredTask(), pin(_pin) {
    pinMode(pin, OUTPUT);
    
 }
 
-bool AugerRotateMotor::canRun(uint32_t now)
-{
-  return true;//TO DO
+bool AugerRotateMotor::canRun(uint32_t now) {
+  bool canRotateAuger = false;
+  if (data.rocker1 == true && data.jsButton == true) {
+    canRotateAuger = true;
+  }
+  return canRotateAuger;
 }
 
 //TO DO
 void AugerRotateMotor::run(uint32_t now)
 {
+  if (motorForward) {
+    Serial.println("Auger Motor Running Forward");
+  } else {
+    Serial.println("Auger Motor Running Backward");
+  }
   //roboclaw.ForwardM2(address2, dummyVar);
   //roboclaw.BackwardM2(address, dummyVar2);
   
