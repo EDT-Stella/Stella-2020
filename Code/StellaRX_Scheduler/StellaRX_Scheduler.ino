@@ -137,20 +137,39 @@ void dataReceived_Interrupt() {
   MSSG = true;
   //getData();
 }
-//==================================================================
-
 
 //======================AugerRotateMotor==============================
-class AugerRotateMotor : public TimedTask
+class AugerRotateMotor : public TriggeredTask
 {
+  
+  
 public:
-  AugerRotateMotor(/**/);
   virtual void run(uint32_t schTime);
-
+  virtual bool canRun(uint32_t now);
+  AugerRotateMotor(uint8_t _pin);
+  
   private:
+  uint8_t pin;
 };
-//==================================================================
 
+AugerRotateMotor::AugerRotateMotor(uint8_t _pin) : TriggeredTask(), pin(_pin)
+{
+   pinMode(pin, OUTPUT);
+   
+}
+
+bool AugerRotateMotor::canRun(uint32_t now)
+{
+  return true;//TO DO
+}
+
+//TO DO
+void AugerRotateMotor::run(uint32_t now)
+{
+  //roboclaw.ForwardM2(address2, dummyVar);
+  //roboclaw.BackwardM2(address, dummyVar2);
+  
+}
 
 //======================AugerMoveActuator===========================
 class AugerMoveActuator : public TimedTask
