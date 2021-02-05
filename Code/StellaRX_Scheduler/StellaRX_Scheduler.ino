@@ -301,13 +301,13 @@ bool BallShooter::canRun(uint32_t now) {
 */
 class BarrelRotateStepper : public TriggeredTask
 {
-  public:
+public:
   BarrelRotateStepper(uint32_t _pin1, uint32_t _pin2, short _currentColor, short _targetColor);
   void waitForPosition(int32_t targetPosition);
   virtual void run(uint32_t now);
   virtual bool canRun(uint32_t now);
-
-  private:
+  
+private:
   uint32_t pin1;
   uint32_t pin2;
   short currentColor; // The current index the motor is at
@@ -324,7 +324,8 @@ BarrelRotateStepper::BarrelRotateStepper(uint32_t _pin1, uint32_t _pin2, short _
 
 void BarrelRotateStepper::run(uint32_t now){
   if (data.button2 == true) {
-    if (targetColor >= NUM_COLORS) {
+    data.button2 = false;
+    if (targetColor >= NUM_COLORS - 1) {
       targetColor = 0;
     }
     else {
@@ -332,17 +333,17 @@ void BarrelRotateStepper::run(uint32_t now){
     }
   } 
   else if(data.button3 == true) {
+    data.button3 = false;
     if (targetColor <= 0) {
-      targetColor = NUM_COLORS;
+      targetColor = NUM_COLORS - 1;
     }
     else {
-      targetColor++;
+      targetColor--;
     }
   }
   
   short distance = targetColor - currentColor;
   
-
   // Moves the opposite direction if the distance is greater than 3
   if (distance > 3) {
     distance -= 6;
@@ -351,19 +352,19 @@ void BarrelRotateStepper::run(uint32_t now){
     distance += 6;
   }
   
-  int32_t targetPos = tic.getCurrentPosition() + (distance * 33.0);
-  tic.setTargetPosition(targetPos);
-  
-  waitForPosition(targetPos);
+//  int32_t targetPos = tic.getCurrentPosition() + (distance * 33.0);
+//  tic.setTargetPosition(targetPos);
+//  
+//  waitForPosition(targetPos);
 
   currentColor = targetColor;
 
-  Serial.print("Color moved by: ");
-  Serial.println(distance);
+  Serial.print("Color moved by: ");  Serial.println(distance);
+  Serial.print("  Target Color: "); Serial.println(targetColor);
 }
 
 bool BarrelRotateStepper::canRun(uint32_t now) {
-  if (data.rocker1 == false && data.rocker2 == false) {
+  if (data.rocker1 == true && data.rocker2 == false) {
     if (data.button2 == true || data.button3 == true) {
       return true;
     }
@@ -648,6 +649,7 @@ void loop() {
   //--------------Scheduler Init-----------------
   //ColorSensor colorSensor;
   AugerMoveActuator augerMoveActuator;
+  BarrelRotateStepper barrelRotateStepper(1, 1, 1, 1);
   DropBall dropBall(DROP_DOOR_PIN);
   BallShooter ballShooter;
   Radio radio(1);
@@ -656,6 +658,7 @@ void loop() {
   Task *tasks[] = {
     //&colorSensor,
     &augerMoveActuator,
+    &barrelRotateStepper,
     &dropBall,
     &ballShooter,
     &radio,
