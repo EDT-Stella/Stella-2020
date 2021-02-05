@@ -99,27 +99,34 @@ struct dataReceived { // Data from the controller
 };
 dataReceived data; // this must match dataToSend in the TX
 
-void printData() {
-  Serial.print("Button 1: ");
-  Serial.println(data.button1);
-  Serial.print("Button 2: ");
-  Serial.println(data.button2);
-  Serial.print("Button 3: ");
-  Serial.println(data.button3);
-  Serial.print("Button 4: ");
-  Serial.println(data.button4);
+void printData(String input) {
+  String rocker1;
+  String rocker2;
+  
+  if (data.rocker1 == true) {
+    rocker1 = "Pickup Mode";
+  } else {
+    rocker1 = "Drop Mode";
+  }
+
+  if (data.rocker2 == true) {
+    rocker2 = "Shooter Mode";
+  } else {
+    rocker2 = "Sorted Mode";
+  }
+  
+  Serial.println("================================Current Control Status============================");
+  Serial.print("    Input: "); Serial.println(input);
+  Serial.print(" Button 1: ");  Serial.print(data.button1); Serial.print("\t");  Serial.print("Button 2: ");  Serial.println(data.button2);
+  Serial.print(" Button 3: ");  Serial.print(data.button3); Serial.print("\t");  Serial.print("Button 4: ");  Serial.println(data.button4);
   Serial.print("JS Button: ");
   Serial.println(data.jsButton);
-
-  Serial.print("Rocker 1: ");
-  Serial.println(data.rocker1);
-  Serial.print("Rocker 2: ");
-  Serial.println(data.rocker2);
+  Serial.println();
   
-  Serial.print("JS X: ");
-  Serial.println(data.jX);
-  Serial.print("JS Y: ");
-  Serial.println(data.jY);
+  Serial.print(" Rocker 1: ");  Serial.println(rocker1);
+  Serial.print(" Rocker 2: ");  Serial.println(rocker2);
+  Serial.print("     JS X: ");  Serial.print(data.jX); Serial.print("\t");  Serial.print("JS Y: ");  Serial.println(data.jY);
+  Serial.println("==================================================================================");
 }
 
 struct ackData { //Acknowledgement data
@@ -248,7 +255,7 @@ void DropBall::run(uint32_t now) {
 bool DropBall::canRun(uint32_t now) {
   bool canDrop = false;
 
-  if (data.rocker2 == true && data.button1 == true) {
+  if (data.rocker1 == false && data.rocker2 == false && data.button1 == true) {
     canDrop = true;
   }
   
@@ -525,8 +532,8 @@ private:
 };
 
 KeyboardInput::KeyboardInput(uint8_t _pin) {
-  //Serial.begin(9600);
-  Serial.println("Stella Receiver Starting");
+  data.jX = 127;
+  data.jY = 127;
 }
 
 void KeyboardInput::run(uint32_t now)
@@ -572,8 +579,8 @@ void KeyboardInput::run(uint32_t now)
     data.jX = 127;
     data.jY = 127;
   }
-  Serial.println(input);
-  printData();
+  
+  printData(input);
 }
 
 bool KeyboardInput::canRun(uint32_t now)
@@ -585,7 +592,6 @@ bool KeyboardInput::canRun(uint32_t now)
 
 void setup() {
   Serial.begin(9600);
-  Serial.print("Print");
 
 //  //-----------------------------------------
 //  //RoboClaw initialization and settings
