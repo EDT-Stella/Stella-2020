@@ -294,9 +294,25 @@ BarrelRotateStepper::BarrelRotateStepper(uint32_t _pin1, uint32_t _pin2, short _
 }
 
 void BarrelRotateStepper::run(uint32_t now){
+  if (data.button2 == true) {
+    if (targetColor >= NUM_COLORS) {
+      targetColor = 0;
+    }
+    else {
+      targetColor++;
+    }
+  } 
+  else if(data.button3 == true) {
+    if (targetColor <= 0) {
+      targetColor = NUM_COLORS;
+    }
+    else {
+      targetColor++;
+    }
+  }
+  
   short distance = targetColor - currentColor;
-  Serial.print("Color moved by: ");
-  Serial.println(distance);
+  
 
   // Moves the opposite direction if the distance is greater than 3
   if (distance > 3) {
@@ -312,33 +328,19 @@ void BarrelRotateStepper::run(uint32_t now){
   waitForPosition(targetPos);
 
   currentColor = targetColor;
+
+  Serial.print("Color moved by: ");
+  Serial.println(distance);
 }
 
 bool BarrelRotateStepper::canRun(uint32_t now) {
-  bool canRun = false;
-
-  if (data.rocker1 == true && data.rocker2 == false) {
-    if (data.button2 == true) {
-      canRun = true;
-      data.button2 = false;
-      if (targetColor == NUM_COLORS - 1) {
-        targetColor = 0;
-      } else {
-        targetColor++;
-      }
-    }
-    if (data.button3 == true) {
-      canRun = true;
-      data.button3 = false;
-      if (targetColor == 0) {
-        targetColor = NUM_COLORS - 1;
-      } else {
-        targetColor--;
-      }
+  if (data.rocker1 == false && data.rocker2 == false) {
+    if (data.button2 == true || data.button3 == true) {
+      return true;
     }
   }
   
-  return canRun;
+  return false;
 }
 
 void BarrelRotateStepper::waitForPosition(int32_t targetPosition) {
