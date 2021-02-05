@@ -264,6 +264,35 @@ bool DropBall::canRun(uint32_t now) {
 //==================================================================
 
 
+//===================BallShooter====================================
+class BallShooter : public TriggeredTask
+{
+public:
+  BallShooter();
+  virtual void run(uint32_t now);
+  virtual bool canRun(uint32_t now);
+};
+
+BallShooter::BallShooter() : TriggeredTask() {}
+
+void BallShooter::run(uint32_t now) {
+  data.button1 = false;
+
+  Serial.println("Shooting ball now.");
+}
+
+bool BallShooter::canRun(uint32_t now) {
+  bool canShoot = false;
+
+  if (!data.rocker1 && data.rocker2 && data.button1) {
+    canShoot = true;
+  }
+
+  return canShoot;
+}
+//==================================================================
+
+
 //===================BarrelRotateStepper============================
 /* Niraj Salunkhe
  * Pins used for stepper motor:
@@ -620,6 +649,7 @@ void loop() {
   //ColorSensor colorSensor;
   AugerMoveActuator augerMoveActuator;
   DropBall dropBall(DROP_DOOR_PIN);
+  BallShooter ballShooter;
   Radio radio(1);
   KeyboardInput input(1);
   
@@ -627,6 +657,7 @@ void loop() {
     //&colorSensor,
     &augerMoveActuator,
     &dropBall,
+    &ballShooter,
     &radio,
     &input
     //...Add task objects here
