@@ -360,7 +360,7 @@ void BarrelRotateStepper::run(uint32_t now){
   currentColor = targetColor;
 
   Serial.print("Color moved by: ");  Serial.println(distance);
-  Serial.print("  Target Color: "); Serial.println(targetColor);
+  Serial.print("  Target Color: ");  Serial.println(targetColor);
 }
 
 bool BarrelRotateStepper::canRun(uint32_t now) {
