@@ -37,11 +37,14 @@ volatile byte MSSG = false;
 // Color sensor interrupt flag
 volatile byte TCS_STATE = false;
 
-// Barrel Stepper Motor interrupt flag.
-volatile byte ROTATE_BARREL = false;
-
-//Radio new data flag
+//Radio new data flag - only for debugging
 bool newData = false;
+
+//Auger Rotate Flag
+bool ROTATE_AUGER = false;
+
+//Barrel rotate flag.
+bool ROTATE_BARREL = false;
 //===============================================
 
 
@@ -140,16 +143,12 @@ int counter = 0;
 
 //======================dataReceived()==============================
 void dataReceived_Interrupt() {
-  //Serial.println("Interrupt called");
   MSSG = true;
-  //getData();
 }
 
 //======================AugerRotateMotor==============================
 class AugerRotateMotor : public TriggeredTask
 {
-  
-  
 public:
   virtual void run(uint32_t schTime);
   virtual bool canRun(uint32_t now);
@@ -157,25 +156,30 @@ public:
   
   private:
   uint8_t pin;
+  bool isRotating;
 };
 
 AugerRotateMotor::AugerRotateMotor(uint8_t _pin) : TriggeredTask(), pin(_pin)
 {
-   pinMode(pin, OUTPUT);
-   
+   pinMode(pin, OUTPUT);   
 }
 
 bool AugerRotateMotor::canRun(uint32_t now)
 {
-  return true;//TO DO
+  if (data.rocker1 == true && data.jsButton == true) {
+    return true;
+  }
+  
+  return false;
 }
 
-//TO DO
 void AugerRotateMotor::run(uint32_t now)
 {
-  //roboclaw.ForwardM2(address2, dummyVar);
-  //roboclaw.BackwardM2(address, dummyVar2);
-  
+  data.jsButton = false;
+
+  while (!TCS_STATE && !MSSG) {
+    //Rotate motor incrementally until the color sensor senses a ball
+  }
 }
 
 //======================AugerMoveActuator===========================
@@ -649,6 +653,7 @@ void loop() {
   //--------------Scheduler Init-----------------
   //ColorSensor colorSensor;
   AugerMoveActuator augerMoveActuator;
+  AugerRotateMotor augerRotateMotor(1);
   BarrelRotateStepper barrelRotateStepper(1, 1, 1, 1);
   DropBall dropBall(DROP_DOOR_PIN);
   BallShooter ballShooter;
@@ -658,6 +663,7 @@ void loop() {
   Task *tasks[] = {
     //&colorSensor,
     &augerMoveActuator,
+    &augerRotateMotor,
     &barrelRotateStepper,
     &dropBall,
     &ballShooter,
