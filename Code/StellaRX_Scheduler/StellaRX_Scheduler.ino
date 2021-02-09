@@ -487,6 +487,18 @@ public:
   ColorSensor();
   virtual bool canRun(uint32_t now);
   virtual void run(uint32_t now);
+
+private:
+  // Placeholder RGB values for each color
+  int colorMap[7][3] = {{11000, 1200, 1500},   // Red
+                        {12000, 6500, 2000},   // Yellow
+                        {2500, 4400, 1800},    // Green
+                        {1500, 2900, 5000},    // Blue
+                        {4000, 3000, 5000},    // Purple
+                        {20000, 14000, 16000}, // Pink
+                        {33000, 7000, 6000}};  // Orange
+  int RGBToColor(float r, float g, float b);
+  bool within1000(int val1, int val2);
 };
 
 // Color sensor setup
@@ -522,8 +534,16 @@ void ColorSensor::run(uint32_t now)
   getRawData_noDelay(&r, &g, &b, &c); 
   //Serial.print("R: "); Serial.print(r); 
   //Serial.print("\tG: "); Serial.print(g); 
-  //Serial.print("\tB: "); Serial.println(b);
+  //Serial.print("\tB: "); Serial.print(b);
 
+  int color = RGBToColor(r, g, b);
+
+  //Serial.print("\tColor: "); Serial.println(color);
+
+  if (color != -1) {
+    targetColor = color;
+  }
+  
   // Clear interrupt flag
   tcs.clearInterrupt();
   TCS_STATE = false;
@@ -543,6 +563,27 @@ void getRawData_noDelay(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
   *r = tcs.read16(TCS34725_RDATAL);
   *g = tcs.read16(TCS34725_GDATAL);
   *b = tcs.read16(TCS34725_BDATAL);
+}
+
+// Return whether two numbers are within 1000 of each other
+bool ColorSensor::within1000(int val1, int val2) {
+  return (val1 <= val2 + 1000 && val1 >= val2 - 1000);
+}
+
+// Convert RGB values to a color number from 0 to 5 based on the color map
+int ColorSensor::RGBToColor(float r, float g, float b) {
+  // Iterate through color map
+  for (int i = 0; i < 7; ++i) {
+    // Return matching color
+    if (within1000(r, colorMap[i][0]) &&
+        within1000(g, colorMap[i][1]) &&
+        within1000(b, colorMap[i][2])) {
+      return min(i, 5); // Orange (color 6) also returns 5
+    }
+  }
+
+  // No color found
+  return -1;
 }
 //==================================================================
 
