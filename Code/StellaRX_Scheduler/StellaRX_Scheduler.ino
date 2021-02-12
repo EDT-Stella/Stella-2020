@@ -54,7 +54,7 @@ RF24 radio(CE_PIN, CSN_PIN);
 //===============================================
 
 //===============RoboClaw Globals================
-RoboClaw roboclaw(&Serial3, 10000); // Create a Roboclaw object
+//RoboClaw roboclaw(&Serial3, 10000); // Create a Roboclaw object
 bool actuatorForward = true;
 bool motorForward = true;
 //===============================================
@@ -362,6 +362,10 @@ void BarrelRotateStepper::run(uint32_t now){
 //  waitForPosition(targetPos);
 
   currentColor = targetColor;
+
+  if (data.rocker1 == true) {
+    ROTATE_AUGER = true;
+  }
 
   Serial.print("Color moved by: ");  Serial.println(distance);
   Serial.print("  Target Color: ");  Serial.println(targetColor);
