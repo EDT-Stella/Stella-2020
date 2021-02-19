@@ -489,6 +489,7 @@ public:
   virtual void run(uint32_t now);
 
 private:
+  const int colorValThreshold = 1000;
   // Placeholder RGB values for each color
   int colorMap[7][3] = {{11000, 1200, 1500},   // Red
                         {12000, 6500, 2000},   // Yellow
@@ -498,7 +499,7 @@ private:
                         {20000, 14000, 16000}, // Pink
                         {33000, 7000, 6000}};  // Orange
   int RGBToColor(float r, float g, float b);
-  bool within1000(int val1, int val2);
+  bool withinThreshold(int val1, int val2);
 };
 
 // Color sensor setup
@@ -565,9 +566,9 @@ void getRawData_noDelay(uint16_t *r, uint16_t *g, uint16_t *b, uint16_t *c)
   *b = tcs.read16(TCS34725_BDATAL);
 }
 
-// Return whether two numbers are within 1000 of each other
-bool ColorSensor::within1000(int val1, int val2) {
-  return (val1 <= val2 + 1000 && val1 >= val2 - 1000);
+// Return whether two numbers are within the color value threshold of each other
+bool ColorSensor::withinThreshold(int val1, int val2) {
+  return (val1 <= val2 + colorValThreshold && val1 >= val2 - colorValThreshold);
 }
 
 // Convert RGB values to a color number from 0 to 5 based on the color map
@@ -575,9 +576,9 @@ int ColorSensor::RGBToColor(float r, float g, float b) {
   // Iterate through color map
   for (int i = 0; i < 7; ++i) {
     // Return matching color
-    if (within1000(r, colorMap[i][0]) &&
-        within1000(g, colorMap[i][1]) &&
-        within1000(b, colorMap[i][2])) {
+    if (withinThreshold(r, colorMap[i][0]) &&
+        withinThreshold(g, colorMap[i][1]) &&
+        withinThreshold(b, colorMap[i][2])) {
       return min(i, 5); // Orange (color 6) also returns 5
     }
   }
