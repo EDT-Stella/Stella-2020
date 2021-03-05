@@ -60,13 +60,7 @@ bool motorForward = true;
 //===============================================
 
 //===============Stepper Motor Globals===========
-#ifdef SERIAL_PORT_HARDWARE_OPEN
-#define ticSerial SERIAL_PORT_HARDWARE_OPEN
-#else
-#include <SoftwareSerial.h>
-SoftwareSerial ticSerial(STEPPER_RX, STEPPER_TX);
-#endif
-TicSerial tic(ticSerial);
+TicSerial tic(SERIAL_PORT_HARDWARE_OPEN);
 //===============================================
 
 //===============Color Sensor Global=============
@@ -320,8 +314,8 @@ private:
 };
 
 BarrelRotateStepper::BarrelRotateStepper(uint32_t _pin1, uint32_t _pin2, short _currentColor, short _targetColor):TriggeredTask(), pin1(_pin1), pin2(_pin2) {
-  SoftwareSerial ticSerial(pin1, pin2);
-  TicSerial tic(ticSerial);
+  //SoftwareSerial ticSerial(pin1, pin2);
+  //TicSerial tic(ticSerial);
   currentColor = _currentColor;
   targetColor = _targetColor;
 }
@@ -356,10 +350,10 @@ void BarrelRotateStepper::run(uint32_t now){
     distance += 6;
   }
   
-//  int32_t targetPos = tic.getCurrentPosition() + (distance * 33.0);
-//  tic.setTargetPosition(targetPos);
-//  
-//  waitForPosition(targetPos);
+  int32_t targetPos = tic.getCurrentPosition() + (distance * 33.0);
+  tic.setTargetPosition(targetPos);
+  
+  waitForPosition(targetPos);
 
   currentColor = targetColor;
 
