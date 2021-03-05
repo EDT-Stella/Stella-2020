@@ -474,9 +474,18 @@ void Radio::showData() {
       Serial.println(data.jsButton);
     }
 
-    if (data.rocker != lastData.rocker) {
-      Serial.print("Rocker switched to ");
-      if (data.rocker) {
+    if (data.rocker1 != lastData.rocker1) {
+      Serial.print("Rocker1 switched to ");
+      if (data.rocker1) {
+        Serial.println("ON");
+      } 
+      else {
+        Serial.println("OFF");
+      }
+    }
+    if (data.rocker2 != lastData.rocker2) {
+      Serial.print("Rocker2 switched to ");
+      if (data.rocker2) {
         Serial.println("ON");
       } 
       else {
