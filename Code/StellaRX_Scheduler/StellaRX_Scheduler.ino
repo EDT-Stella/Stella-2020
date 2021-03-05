@@ -47,13 +47,13 @@ bool motorForward = true;
 //===============================================
 
 //===============Stepper Motor Globals===========
-#ifdef SERIAL_PORT_HARDWARE_OPEN
-#define ticSerial SERIAL_PORT_HARDWARE_OPEN
-#else
-#include <SoftwareSerial.h>
-SoftwareSerial ticSerial(10, 11);
-#endif
-TicSerial tic(ticSerial);
+//#ifdef SERIAL_PORT_HARDWARE_OPEN
+//#define ticSerial SERIAL_PORT_HARDWARE_OPEN
+//#else
+//#include <SoftwareSerial.h>
+//SoftwareSerial ticSerial(19, 18);
+//#endif
+TicSerial tic(SERIAL_PORT_HARDWARE_OPEN);
 //===============================================
 
 //===============Color Sensor Globals============
