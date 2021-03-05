@@ -101,35 +101,7 @@ dataReceived data;
 // Struct will hold the previous data from the controller
 dataReceived lastData;
 
-void printData(String input) {
-  String rocker1;
-  String rocker2;
-  
-  if (data.rocker1 == true) {
-    rocker1 = "Pickup Mode";
-  } else {
-    rocker1 = "Drop Mode";
-  }
 
-  if (data.rocker2 == true) {
-    rocker2 = "Shooter Mode";
-  } else {
-    rocker2 = "Sorted Mode";
-  }
-  
-  Serial.println("================================Current Control Status============================");
-  Serial.print("    Input: "); Serial.println(input);
-  Serial.print(" Button 1: ");  Serial.print(data.button1); Serial.print("\t");  Serial.print("Button 2: ");  Serial.println(data.button2);
-  Serial.print(" Button 3: ");  Serial.print(data.button3); Serial.print("\t");  Serial.print("Button 4: ");  Serial.println(data.button4);
-  Serial.print("JS Button: ");
-  Serial.println(data.jsButton);
-  Serial.println();
-  
-  Serial.print(" Rocker 1: ");  Serial.println(rocker1);
-  Serial.print(" Rocker 2: ");  Serial.println(rocker2);
-  Serial.print("     JS X: ");  Serial.print(data.jX); Serial.print("\t");  Serial.print("JS Y: ");  Serial.println(data.jY);
-  Serial.println("==================================================================================");
-}
 
 struct ackData { //Acknowledgement data
   byte ballColor;
@@ -319,8 +291,9 @@ private:
 };
 
 BarrelRotateStepper::BarrelRotateStepper(uint32_t _pin1, uint32_t _pin2, short _currentColor, short _targetColor):TriggeredTask(), pin1(_pin1), pin2(_pin2) {
-  //SoftwareSerial ticSerial(pin1, pin2);
-  //TicSerial tic(ticSerial);
+  ticSerial.begin(9600);
+  delay(20);
+  ti
   currentColor = _currentColor;
   targetColor = _targetColor;
 }
@@ -371,8 +344,9 @@ void BarrelRotateStepper::run(uint32_t now){
 }
 
 bool BarrelRotateStepper::canRun(uint32_t now) {
-  if (data.rocker1 == true && data.rocker2 == false) {
-    if (data.button2 == true || data.button3 == true) {
+  if ( (data.rocker1 == true) && (data.rocker2 == false) ) {
+    if ( (data.button2 == true) || (data.button3 == true) ) {
+      Serial.println("Rotating barrel");
       return true;
     }
   }
@@ -629,6 +603,7 @@ public:
   KeyboardInput(uint8_t _pin);
   virtual bool canRun(uint32_t now);
   virtual void run(uint32_t now);
+  void printData(String input);
 
 private:
   
@@ -686,6 +661,36 @@ void KeyboardInput::run(uint32_t now)
   printData(input);
 }
 
+void KeyboardInput::printData(String input) {
+  String rocker1;
+  String rocker2;
+  
+  if (data.rocker1 == true) {
+    rocker1 = "Pickup Mode";
+  } else {
+    rocker1 = "Drop Mode";
+  }
+
+  if (data.rocker2 == true) {
+    rocker2 = "Shooter Mode";
+  } else {
+    rocker2 = "Sorted Mode";
+  }
+  
+  Serial.println("================================Current Control Status============================");
+  Serial.print("    Input: "); Serial.println(input);
+  Serial.print(" Button 1: ");  Serial.print(data.button1); Serial.print("\t");  Serial.print("Button 2: ");  Serial.println(data.button2);
+  Serial.print(" Button 3: ");  Serial.print(data.button3); Serial.print("\t");  Serial.print("Button 4: ");  Serial.println(data.button4);
+  Serial.print("JS Button: ");
+  Serial.println(data.jsButton);
+  Serial.println();
+  
+  Serial.print(" Rocker 1: ");  Serial.println(rocker1);
+  Serial.print(" Rocker 2: ");  Serial.println(rocker2);
+  Serial.print("     JS X: ");  Serial.print(data.jX); Serial.print("\t");  Serial.print("JS Y: ");  Serial.println(data.jY);
+  Serial.println("==================================================================================");
+}
+
 bool KeyboardInput::canRun(uint32_t now)
 {
   return (Serial.available() > 0);
@@ -724,7 +729,7 @@ void loop() {
   BarrelRotateStepper barrelRotateStepper(1, 1, 1, 1);
   DropBall dropBall(DROP_DOOR_PIN);
   BallShooter ballShooter;
-  Radio radio(1);
+  //Radio radio(1);
   KeyboardInput input(1);
   
   Task *tasks[] = {
@@ -734,7 +739,7 @@ void loop() {
     &barrelRotateStepper,
     &dropBall,
     &ballShooter,
-    &radio,
+    //&radio,
     &input
     //...Add task objects here
   };
