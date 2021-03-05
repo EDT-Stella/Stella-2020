@@ -2,6 +2,7 @@
 // Authors:
 //  Dan Even
 //  Shane J
+//  Aden Prince
 
 
 #include "Adafruit_TCS34725.h"
@@ -43,16 +44,24 @@ volatile bool ColorSense = false;
 volatile bool RotateBarrel = false;
 volatile bool ExtendingAuger = false;
 
-enum colorList{ 
+enum color { 
   Red, 
   Orange,
   Yellow,
   Green,
-  LightBlue,
-  DarkBlue,
+  Blue,
   Purple,
   Pink
-}storeColor, dropColor;
+} storeColor, dropColor;
+
+// RGB values for each color
+int colorMap[8][3] = {{145, 53, 45},   // Red
+                      {147, 60, 34},   // Orange
+                      {125, 128, 45},  // Yellow
+                      {76, 113, 50},   // Green
+                      {28, 78, 136},   // Blue
+                      {72, 67, 105},   // Purple
+                      {104, 54, 81}};  // Pink
 
 //Interrupt Flag - set to true if RF24 indicates new message
 volatile byte mssg = false;
@@ -64,25 +73,21 @@ void dataReceived_Interrupt() {
   //getData();
 }
 
-void setSortColor(){
+void setDropColor(){
   if(storeColor == Red) {
-    dropColor = Purple; 
+    dropColor = Blue; 
   }
-  else if (storeColor == Orange){
-    dropColor = Yellow; 
+  else if (storeColor == Yellow) {
+    dropColor = Purple;
   }
-  else if (storeColor == Yellow){
-    dropColor = Orange;
-  }
-  else if (storeColor == Green){
-    dropColor = LightBlue;
-  }
-  else if (storeColor == LightBlue){
-    dropColor = Green;
-  }
-  else if (storeColor == Purple) 
-  {
+  else if (storeColor == Green) {
     dropColor = Red;
+  }
+  else if (storeColor == Blue) {
+    dropColor = Yellow;
+  }
+  else if (storeColor == Purple) {
+    dropColor = Green;
   }
 }
 
@@ -109,27 +114,66 @@ bool rotateAuger() {
   return true;
 }
 
-//Uses the sensor to get the color of the ball to be sorted
+// Use the sensor to get the color of the ball to be sorted
 bool getColor() {
+  ColorSense = true;
   if (!RotateAuger) {
     if (!RotateBarrel) {
-      //Call Color sensor
+      // Call Color sensor
       float red, green, blue;
-      tcs.setInterrupt(false);  //Turn on LED
+      tcs.setInterrupt(false); // Turn on LED
       delay(60);
-      tcs.setInterrupt(true);  //Turn off LED
+      tcs.setInterrupt(true);  // Turn off LED
       tcs.getRGB(&red, &green, &blue); // Read color values
+
+      // Get storeColor from RGB values
+      if (!RGBToColor(red, green, blue, storeColor)) {
+        return false; // Color not found
+      }
+      setDropColor();
+      return true; // Color found
     }
   }
 }
 
+// Check if the first parameter is within +/- 10 of the second parameter
+// Parameters:
+// int val1, val2 - values to compare
+// Return:
+// bool of whether the first value is within +/- 10 of the second value
+bool within10(int val1, int val2) {
+  return (val1 <= val2 + 10 && val1 >= val2 - 10);
+}
+
+// Get a color based on passed RGB values using the color map
+// Parameters:
+// float red, green, blue - color values from the color sensor
+// color result reference - color converted from the passed RGB values
+// Return:
+// bool of whether a color was found or not
+bool RGBToColor(float red, float green, float blue, color &result) {
+  // Iterate through color map
+  for (int i = 0; i < 7; ++i) {
+    // Check if the passed RGB values are close to the current color
+    if (within10(red, colorMap[i][0]) &&
+        within10(green, colorMap[i][1]) &&
+        within10(blue, colorMap[i][2])) {
+          
+      // Set result to current color
+      result = (color)i;
+      return true; // Color found
+    }
+  }
+
+  return false; // Color not found
+}
 
 // Rotates the barrel to dispense/sort the correct color
 // Parameters:
-// colorList c - the color to be dispensed/sorted to
+// color c - the color to be dispensed/sorted to
 // bool sort - if TRUE: move to appropriate color for sorting
 //                FALSE: move to appropriate color for dispensing
-bool rotateBarrel(colorList c, bool sort) {
+bool rotateBarrel(color c, bool sort) {
     if (!RotateAuger) {
       if (!ColorSense) {
         
@@ -149,7 +193,6 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(2), dataReceived_Interrupt, FALLING);
   Serial.println("Radio is starting");
   //-----------------------------------------
-
   
   //-----------------------------------------
   //Color Sensor initialization and settings
@@ -162,7 +205,7 @@ void setup() {
   }
   //-----------------------------------------
   
-  storeColor = Red ;
+  storeColor = Red;
   dropColor = Purple;
 
 }
