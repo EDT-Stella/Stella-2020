@@ -8,10 +8,10 @@
 #define ticSerial SERIAL_PORT_HARDWARE_OPEN
 #else
 #include <SoftwareSerial.h>
-SoftwareSerial ticSerial(SERIAL_PORT_HARDWARE_OPEN);
+//SoftwareSerial ticSerial(SERIAL_PORT_HARDWARE_OPEN);
 #endif
 
-TicSerial tic(ticSerial);
+TicSerial tic(SERIAL_PORT_HARDWARE_OPEN);
 
 void setup()
 {
